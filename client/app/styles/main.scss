@@ -1,0 +1,74 @@
+a {
+  padding: 2px 5px;
+}
+
+a.single-line {
+  padding: 0;
+}
+
+a.text {
+  color: black;
+}
+
+a.text:hover {
+  color: black;
+}
+
+main {
+  position: relative;
+}
+
+.navbar {
+  .navbar-toggler:focus {
+    box-shadow: unset;
+  }
+
+  .navbar-toggler:active {
+    box-shadow: 1px 1px 2px 0px rgba(0, 0, 0, 0.25) inset;
+  }
+
+  .nav-link {
+    white-space: nowrap;
+    padding: 8px 8px;
+  }
+
+  .nav-item {
+  }
+}
+
+.navbar.navbar-dark {
+  .navbar-toggler:active {
+    box-shadow: 1px 1px 2px 0px rgba(255, 255, 255, 0.25);
+  }
+}
+
+.alert {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  button {
+    margin-left: 10px;
+  }
+}
+
+input[type="text"].form-control:read-only,
+input[type="email"].form-control:read-only,
+input[type="number"].form-control:read-only,
+input[type="password"].form-control:read-only,
+input[type="url"].form-control:read-only {
+  box-shadow: unset;
+  border: none;
+}
+
+.hide-overflow {
+  overflow: hidden;
+}
+
+@media print
+{
+    .no-print, .no-print *
+    {
+        display: none !important;
+    }
+}

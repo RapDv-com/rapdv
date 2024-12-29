@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "jsx": "react",
+    "module": "CommonJS",
+    "target": "ES6",
+    "noImplicitAny": false,
+    "sourceMap": true,
+    "declaration": true,
+    "outDir": "lib",
+    "forceConsistentCasingInFileNames": true,
+    "typeRoots": [
+      "node_modules/@types"
+    ]
+  },
+}

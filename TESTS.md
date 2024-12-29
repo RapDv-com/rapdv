@@ -1,0 +1,43 @@
+Tests to run before deployment:
+-------------------------------
+
+- You can add routes with `addRoute`
+- You can add routes with `addSimpleRoute`
+- You can add routes with `addGenericRoute`
+- You can defined app icon in `client/assets/favicon.svg` and it will be used properly
+- You can set basic app info in the main App.tsx
+- You can specify custom app layout
+- You can sepcify custom user roles
+- You can add custom collections for storing data
+- You can show different types of flash messages
+- You can render page with React nodes or with simple text
+- You can show flash message and then redirect from a page. There won't be an error when you return undefined from the page.
+- You can retrive automatically scalled app icon with appropriete endpoints
+- There are `robots.txt` and `sitemap` endpoints, automatically generated for the application
+- You can have a specific logic per page on the client side
+- Make sure that there are no `require` calls, and if there are, change them to `import`
+- You can inject fully customized `manifest.json`
+- When you first start the app, you see the setup screen to create admin account
+- Setup screen form is properly validate
+- You can get page parameters and their validation results, using `Form.getParams`
+- You can simply edit an entry with `Form.editEntry`
+- User can use application freely in the development mode
+- User needs to pay for using the application in the production
+- Add source code files have copyright notice
+- You can create an account and authorize user using `AuthEmailCodes`
+- User is logged in automatically, but if they don't verify their email address they get kicked out after 2 hours
+- If user creates account with email that already exists in the database, but is not verified, we send them another verification email
+- You can send emails using `Mailer`
+- You can upload files
+- You can upload images
+- You can send commands with `ButtonAjax`
+- Flash messages are rendered correcly with `FlashMessages`
+- You can submit form with `SubmitForm`
+- You can render `Input`, `Select` and `Textarea` easily, their value gets automatically populated after POST request, if you set `req` param 
+- You can automatically format code in this library with `npm run format-code`
+- You can automatically format code as a user in their custom app with `npm run format-code`
+- `Nav` works with and without an app icon
+- You can check authorization in `beforeEndpointIsCalled` and `beforeRouteIsRendered` methods
+- Make sure there are no `TODO` or `console.log` in the source code
+- You can open links with `target="_blank"` in a new tab
+- You can show `<Input type-"checkbox" />`

@@ -1,0 +1,168 @@
+<h1>RapDv Documentation</h1>
+<h1>Table of Contents</h1>
+
+<!-- MENU -->
+ 
+<a class="btn btn-link w-100" href="#QuickStart">Quick Start</a>
+<a class="btn btn-link w-100" href="#UsedTechnologies">Used Technologies</a>
+<hr/>
+<a class="btn btn-link w-100" href="#Architecture">Architecture</a>
+<a class="btn btn-link w-100" href="#Authentication">Authentication</a>
+<a class="btn btn-link w-100" href="#Client">Client</a>
+<a class="btn btn-link w-100" href="#CustomizingStyle">Customizing Style</a>
+<hr/>
+<a class="btn btn-link w-100" href="#MobileApps">Installing as a Mobile App</a>
+<hr/>
+<a class="btn btn-link w-100" href="#LocalDevelopment">Local Development</a>
+<a class="btn btn-link w-100" href="#DeployingToProduction">Deploying to Production</a>
+ 
+<!-- MAIN CONTENT -->
+
+<h1>RapDv Documentation</h1>
+<h2 class="mb-5">v1.0.0</h2>
+
+<h2 id="QuickStart">Quick Start</h2>
+To start quickly, you can use an example <a href="https://github.com/RapDv-com/rapdv-cms" target="_blank">blog app</a>.
+
+<h2 id="UsedTechnologies" class="mt-3">Used Technologies</h2>
+<ul>
+  <li>TypeScript</li>
+  <li>Node.js</li>
+  <li>Express.js</li>
+  <li>React as a template language on the back-end</li>
+  <li>Bootstrap</li>
+  <li>MongoDB</li>
+</ul>
+
+<h2 id="Architecture" class="mt-3">Architecture</h2>
+<p>
+  RapDv framework is located in: <code>/submodules/rapdv</code>.
+</p>
+
+<h3 class="mt-3">Server</h3>
+
+<p>
+  All back-end code is in the <code>server</code> folder. Server start point is in: <code>/server/App.tsx</code>.
+</p>
+
+<h4 class="mt-3">How to Define an App</h4>
+
+<p>
+  All main components of the applications are in <code>/server/App.tsx</code>.
+</p>
+
+<p>
+  To define the app:<br/>
+  <ol>
+    <li>Set basic app info in  <code>getBasicInfo</code></li>
+    <li>Define authentication methods in <code>initAuth</code></li>
+    <li>Specify list of pages and endpoints in <code>getPages</code></li>
+    <li>Set main app layout in <code>getLayout</code></li>
+    <li>Add custom user roles in <code>getRoles</code>. Default roles, always available are <code>User</code> and <code>Admin</code>.</li>
+    <li>Specify MongoDB collections in <code>getStorage</code></li>
+    <li>Add recurring tasks, if any in <code>startRecurringTasks</code></li>
+  </ol>
+</p>
+
+<h4 id="Authentication" class="mt-3">Authentication</h4>
+
+<p>
+  Currently there are three authentication methods implemented:
+  <ul>
+    <li>Authentication with email by using single codes. You can check it in the <a href="https://github.com/RapDv-com/rapdv-cms" target="_blank">blog app</a>.</li>
+    <li>Authentication with Google. You can check it in the <a href="https://github.com/RapDv-com/rapdv-cms" target="_blank">blog app</a>.</li>
+  </ul>
+</p>
+
+<h4 class="mt-3">Forms in Pages</h4>
+
+<p>Forms in pages are the most common components used over, and over again.</p>
+<p>RapDv has a resuable implementation of forms, that automatically has a server and client side validation built-in.</p>
+<p>You can check its implementation in the example <a href="https://github.com/RapDv-com/rapdv-cms" target="_blank">blog app</a>.</p>
+
+<h3 id="Client" class="mt-3">Client</h3>
+
+<p>
+  All front-end code is in the <code>client</code> folder. Client start point is in: <code>/client/App.tsx</code>. <br/>
+  Client doesn't use React by default to make both using and loading times faster.
+</p>
+
+<p>
+  Page logic is defined in a separate file, for each page. That way you can easily add new pages, and keep the code separated between them.
+</p>
+<p>
+  Check the example <a href="https://github.com/RapDv-com/rapdv-cms" target="_blank">blog app</a> to see how it works.
+</p>
+
+<h2 id="CustomizingStyle" class="mt-3">Customizing Style</h2>
+<p>In order to customize your app, you can use one of ready-made themes: <a href="https://themes.getbootstrap.com" target="_blank">Browse Bootstrap themes</a></p>
+<p>You can also write your own styles in <code>css</code> and <code>scss</code> files.</p>
+
+<h3 class="mt-3">App Icon</h3>
+<p>Create app icon as an <code>svg</code> file. Put it in <code>/client/assets/favicon.svg</code></p>
+<p>It will be automatically rescalled and used everywhere.</p>
+
+<h3 class="mt-3">Responsive Design</h3>
+<p>Thanks to the Bootstrap library, your app should look good on all screen sizes, out of the box.</p>
+
+<h2 id="MobileApps" class="mt-3">Installing as an App on iOS and Android</h2>
+<p>Web apps built with RapDv, can be installed on iOS and Android, and used like native apps.</p>
+<p>
+  Guides:
+  <ul>
+    <li><a href="https://support.google.com/chrome/answer/9658361?hl=en&co=GENIE.Platform%3DAndroid" target="_blank">Android</a></li>
+    <li><a href="https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Installing" target="_blank">Desktops</a></li>
+    <li><a href="https://support.apple.com/guide/shortcuts/add-a-shortcut-to-the-home-screen-apd735880972/ios" target="_blank">iOS</a></li>
+  </ul>
+</p>
+
+<h2 id="LocalDevelopment" class="mt-3">Local Development</h2>
+<p>
+  Based on the steps in the example <a href="https://github.com/RapDv-com/rapdv-cms" target="_blank">blog app</a>:
+</p>
+<ul>
+  <li>
+    Install RapDv submodule: <code>git submodule update --init --recursive</code>.
+  </li>
+  <li>
+    Install all dependencies: <code>npm install</code>  
+  </li>
+  <li>
+    Start MongoDB
+  </li>
+  <li>
+    Copy <code>.env.example</code> to <code>.env</code>, and set correct values in <code>.env</code> file
+  </li>
+  <li>
+    Start app with: <code>npm start</code>
+  </li>
+</ul>
+
+<h2 id="DeployingToProduction" class="mt-3">Deploying to Production</h2>
+<p>
+  You can run this application on any server. It was tested on Ubuntu 22.04.
+</p>
+<ul>
+  <li>
+    Deploy MongoDB database, for example as a Docker container
+  </li>
+  <li>
+    Clone the repository, its submodule and configure enviorment variables in <code>.env</code> file.
+  </li>
+  <li>
+    Install all dependencies: <code>npm install</code>  
+  </li>
+  <li>
+    Create a client production build with: <code>npm run build-prod</code>
+  </li>
+  <li>
+    You can start the app in production with <code>pm2</code>. To install <code>pm2</code>:<br/>
+    <code>npm install pm2 -g</code><br/>
+    <code>pm2 startup</code> To start processes on reboot<br/>
+    <br/>
+    Now you can start your app with: <br/>
+    <code>pm2 start 'cd /var/www/rapdv-app; npm run start-prod' --name "rapdv-app"</code>
+  </li>
+</ul>
+
+
