@@ -27,6 +27,7 @@ type RequestExtensions = {
   sessionID?: string
   user?: HydratedDocument<any>
   files?: File[]
+  session?: any
   error: string
 }
 

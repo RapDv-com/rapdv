@@ -91,7 +91,6 @@ export class Auth {
     if (!system.isSetupFinished && req.path !== Auth.SETUP_URL) {
       return res.redirect(Auth.SETUP_URL)
     }
-    // If you will ever need to check RapDv license. Do it here.
     next()
   }
 
