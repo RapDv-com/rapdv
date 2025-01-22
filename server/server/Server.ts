@@ -17,6 +17,8 @@ import { PageSetup } from "../pages/PageSetup"
 import { Auth } from "../auth/Auth"
 import express from "express"
 import chokidar from 'chokidar';
+import Bun from "bun";
+import cssLoader from 'bun-css-loader';
 
 export class Server {
 
@@ -76,6 +78,22 @@ export class Server {
       })
 
       await this.setupApp()
+
+      console.log("Building client files...")
+      const buildResults = await Bun.build({
+        entrypoints: ['./client/App.tsx'],
+        outdir: './dist',
+        plugins: [
+          cssLoader(),
+        ],
+        splitting: true,
+        minify: this.isProduction,
+      });
+      if(buildResults.success) {
+        console.log("✅ Client files built successfully")
+      } else {
+        console.error("❌ Couldn't build client files. ", buildResults.logs)
+      }
 
       if (!this.isProduction) {
 
