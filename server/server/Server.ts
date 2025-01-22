@@ -17,6 +17,7 @@ import { PageSetup } from "../pages/PageSetup"
 import { Auth } from "../auth/Auth"
 import express from "express"
 import chokidar from 'chokidar';
+import Bun from "bun";
 
 export class Server {
 
@@ -76,6 +77,19 @@ export class Server {
       })
 
       await this.setupApp()
+
+       console.log("Building client files...")
+      const buildResults = await Bun.build({
+        entrypoints: ['./client/App.tsx'],
+        outdir: './dist',
+        splitting: false,
+        minify: this.isProduction,
+      });
+      if(buildResults.success) {
+        console.log("✅ Client files built successfully")
+      } else {
+        console.error("❌ Couldn't build client files. ", buildResults.logs)
+      }
 
       if (!this.isProduction) {
 
