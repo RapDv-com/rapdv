@@ -32,6 +32,7 @@ export class Server {
   isProduction: boolean
   isReloadingApp: boolean = false
   reloadCtrl: any
+  mainServer: any
 
   constructor(getApp: () => RapDvApp) {
     this.getApp = getApp
@@ -43,14 +44,10 @@ export class Server {
 
     this.isReloadingApp = false
     this.port = this.normalizePort(process.env.PORT ?? "3000")
-    const mainServer = express()
-    mainServer.set("port", this.port)
+    this.mainServer = express()
+    this.mainServer.set("port", this.port)
 
-    this.server = http.createServer(mainServer)
-
-    if (!this.isProduction) {
-      this.reloadCtrl = await reload(mainServer, { webSocketServerWaitStart: false })
-    }
+    this.server = http.createServer(this.mainServer)
 
     // Use multi-core on production
     if (this.isProduction && cluster.isPrimary) {
@@ -82,26 +79,6 @@ export class Server {
 
       if (!this.isProduction) {
 
-        // Watch backend files for changes
-        const watcher = chokidar.watch(['./server', './submodules/rapdv/server']);
-        watcher.on('ready', () => {
-          watcher.on('all', async () => {
-            if (this.isReloadingApp) {
-              return
-            }
-            console.info("Reloading app...");
-            this.isReloadingApp = true
-            for (const key in require.cache) {
-              if (/[\/\\]server[\/\\]/.test(key)) {
-                delete require.cache[key];
-              }
-            }
-            await this.setupApp()
-            console.info("✓ App is reloaded");
-            this.isReloadingApp = false
-          });
-        });
-
         // Watch client files for changes
         const watcherDist = chokidar.watch(['./dist']);
         watcherDist.on('ready', () => {
@@ -117,11 +94,11 @@ export class Server {
         this.appExpress.handle(req, res, next);
       }
 
-      mainServer.get('*', handleRequest);
-      mainServer.post('*', handleRequest);
-      mainServer.put('*', handleRequest);
-      mainServer.patch('*', handleRequest);
-      mainServer.delete('*', handleRequest);
+      this.mainServer.get('*', handleRequest);
+      this.mainServer.post('*', handleRequest);
+      this.mainServer.put('*', handleRequest);
+      this.mainServer.patch('*', handleRequest);
+      this.mainServer.delete('*', handleRequest);
     }
 
     if (cluster.isPrimary) {
@@ -163,8 +140,8 @@ export class Server {
     this.appExpress = appExpress
     this.app = app
 
-    if (this.reloadCtrl) {
-      this.reloadCtrl.reload()
+    if (!this.isProduction) {
+      this.reloadCtrl = await reload(this.mainServer, { webSocketServerWaitStart: false })
     }
   }
 
