@@ -18,6 +18,8 @@ import { Auth } from "../auth/Auth"
 import express from "express"
 import chokidar from 'chokidar';
 import Bun from "bun";
+import fs from "fs";
+import path from "path";
 
 export class Server {
 
@@ -84,7 +86,7 @@ export class Server {
         outdir: './dist',
         plugins: [
         ],
-        splitting: true,
+        splitting: false,
         minify: this.isProduction,
       });
       if(buildResults.success) {
@@ -96,6 +98,17 @@ export class Server {
       if (!this.isProduction) {
 
         // Watch client files for changes
+
+        const watcherClient = chokidar.watch(['./client']);
+        watcherClient.on('ready', () => {
+          watcherClient.on('all', async () => {
+            // Restart the server. Update the file timestamp to trigger a restart
+            const filePath = path.join(__dirname, "../Boot.tsx");
+            const now = new Date();
+            fs.utimesSync(filePath, now, now);
+          });
+        });
+
         const watcherDist = chokidar.watch(['./dist']);
         watcherDist.on('ready', () => {
           watcherDist.on('all', async () => {
