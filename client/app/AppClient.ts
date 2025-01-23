@@ -8,8 +8,8 @@ import "nprogress/nprogress.css"
 import NProgress from "nprogress/nprogress.js"
 import { ClientPage, PagesCtrl } from "../elements/PagesCtrl"
 import { Form } from "../elements/Form"
-import "./styles/main.scss"
-import "./styles/sizing.scss"
+import "./styles/main.css"
+import "./styles/sizing.css"
 
 export class AppClient {
   initiated = false
