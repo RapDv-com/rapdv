@@ -18,7 +18,6 @@ import { Auth } from "../auth/Auth"
 import express from "express"
 import chokidar from 'chokidar';
 import Bun from "bun";
-import cssLoader from 'bun-css-loader';
 
 export class Server {
 
@@ -84,7 +83,6 @@ export class Server {
         entrypoints: ['./client/App.tsx'],
         outdir: './dist',
         plugins: [
-          cssLoader(),
         ],
         splitting: true,
         minify: this.isProduction,
