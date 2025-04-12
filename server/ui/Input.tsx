@@ -7,6 +7,7 @@ import { TextUtils } from "../text/TextUtils"
 type Props = {
   req?: Request
   separateLabel?: boolean
+  marginBottomClass?: string
   label?: string | ReactNode | Element
 }
 export class Input extends React.Component<Props & React.InputHTMLAttributes<HTMLInputElement>> {
@@ -45,7 +46,7 @@ export class Input extends React.Component<Props & React.InputHTMLAttributes<HTM
   }
 
   render(): ReactNode | string {
-    const { name, placeholder, value, req, separateLabel, label, ...otherProps } = this.props
+    const { name, placeholder, value, req, separateLabel, marginBottomClass, label, ...otherProps } = this.props
     const valueFromReq = !!req ? req.body[name] : undefined // Get previous value from request
 
     let placeholderText = placeholder
@@ -67,6 +68,7 @@ export class Input extends React.Component<Props & React.InputHTMLAttributes<HTM
     }
 
     const labelText = label ?? placeholderText
+    const marginBottomClassName = marginBottomClass ?? "mb-3"
 
     if (isCheckbox) {
       const checkedValues = ["on", "true", "checked", "yes"]
@@ -75,7 +77,7 @@ export class Input extends React.Component<Props & React.InputHTMLAttributes<HTM
         isChecked = checkedValues.includes(value.toString())
       }
 
-      return <div className="mb-3">
+      return <div className={marginBottomClassName}>
       <label className="form-check">
         <input id={`input${name}`} className="form-check-input" type="checkbox" {...otherProps} name={name} aria-label={placeholderText} defaultChecked={isChecked} />
         <div className="form-check-label">
@@ -87,7 +89,7 @@ export class Input extends React.Component<Props & React.InputHTMLAttributes<HTM
     }
 
     if (isRadio) {
-      return <div className="mb-3">
+      return <div className={marginBottomClassName}>
       <label className="form-check">
         <input id={`input${name}`} className="form-check-input" type="checkbox" {...otherProps} name={name} aria-label={placeholderText} value={value} />
         <div className="form-check-label">
@@ -100,7 +102,7 @@ export class Input extends React.Component<Props & React.InputHTMLAttributes<HTM
 
     if (separateLabel || isFileUpload) {
       return (
-        <div className="mb-3">
+        <div className={marginBottomClassName}>
           <label htmlFor={`input${name}`} className="form-label">
             <>{labelText} <small>{optionalText}</small></>
           </label>
@@ -117,7 +119,7 @@ export class Input extends React.Component<Props & React.InputHTMLAttributes<HTM
       )
     } else {
       return (
-        <div className="form-floating mb-3">
+        <div className={`form-floating ${marginBottomClassName}`}>
           <input
             id={`floating${name}`}
             className="form-control"
