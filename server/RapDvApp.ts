@@ -43,7 +43,7 @@ export abstract class RapDvApp {
   public abstract getBasicInfo: () => AppBasicInfo
   public abstract getPages: () => Promise<void>
   public abstract getHeadTags: (req: Request, res: Response) => Promise<string>
-  public abstract getLayout: (req: Request, content: ReactNode, appInfo: AppBasicInfo) => Promise<ReactNode>
+  public abstract getLayout: (req: Request, content: ReactNode, appInfo: AppBasicInfo, otherOptions?: any) => Promise<ReactNode>
   public abstract initAuth: () => Promise<void>
   public abstract getStorage: () => Promise<void>
   public abstract startRecurringTasks: (mailer: Mailer) => Promise<void>
@@ -136,7 +136,8 @@ export abstract class RapDvApp {
       ui: (req: Request, res: Response, next: NextFunction, app: RapDvApp, mailer: Mailer) => Promise<ReactNode | string>,
       title?: string | SetText,
       description?: string | SetText,
-      disableIndexing?: boolean | SetBoolean
+      disableIndexing?: boolean | SetBoolean,
+      otherOptions?: any
     ) =>
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -146,7 +147,7 @@ export abstract class RapDvApp {
           return
         }
         const appInfo = this.getBasicInfo()
-        const content = await this.getLayout(req, renderedUi, appInfo)
+        const content = await this.getLayout(req, renderedUi, appInfo, otherOptions)
         this.renderView(req, res, next, content, title, description, disableIndexing)
       } catch (error) {
         console.error("Error on rendering views. " + error)
@@ -205,7 +206,8 @@ export abstract class RapDvApp {
     description?: string | SetText,
     restrictions?: (Role | UserRole | string)[],
     disableIndexing?: boolean | SetBoolean,
-    enableFilesUpload?: boolean
+    enableFilesUpload?: boolean,
+    otherOptions?: any
   ) => {
     if (!this.publicUrls) this.publicUrls = []
     const noRestructions = !restrictions || restrictions.length === 0
@@ -221,7 +223,7 @@ export abstract class RapDvApp {
       }
     }
 
-    this.addGenericRoute(urlPath, reqType, this.renderViews(content, title, description, disableIndexing), restrictions, enableFilesUpload)
+    this.addGenericRoute(urlPath, reqType, this.renderViews(content, title, description, disableIndexing, otherOptions), restrictions, enableFilesUpload)
   }
 
   public addSimpleRoute = async (
