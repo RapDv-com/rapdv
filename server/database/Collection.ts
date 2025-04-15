@@ -1,6 +1,6 @@
 // Copyright (C) Konrad Gadzinowski
 
-import mongoose, { HydratedDocument, IndexDefinition, Model, ObjectId, Schema, SchemaDefinition } from "mongoose"
+import mongoose, { HydratedDocument, IndexDefinition, Model, ObjectId, Schema, SchemaDefinition, SortOrder } from "mongoose"
 import { TextUtils } from "../text/TextUtils"
 
 export class Collection {
@@ -133,7 +133,7 @@ export class Collection {
 
   public getName = (): string => this.name
 
-  public findOne = async (queryData: any, populate?: string[]): Promise<HydratedDocument<any>> => {
+  public findOne = async (queryData: any, populate?: string[], sort?: any): Promise<HydratedDocument<any>> => {
     try {
       let query = this.model.findOne(queryData)
       if (!!populate) {
@@ -141,7 +141,8 @@ export class Collection {
           query = query.populate(populateName)
         }
       }
-      let result = await query.sort({ createdAt: 1 }).exec()
+      const sortOrder = sort ? sort : { createdAt: 1 }
+      let result = await query.sort(sortOrder).exec()
       return result
     } catch (error) {
       console.warn("Couldn't complete Collection.findOne. " + error)
