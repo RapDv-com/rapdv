@@ -13,10 +13,11 @@ type Props = {
   children?: any
   className?: string
   noPadding?: boolean
+  noMargin?: boolean
   style?: CSSProperties | undefined;
 }
 
-export const Card = ({ icon, title, description, hideOverflow, href, children, className, noPadding, style }: Props) => {
+export const Card = ({ icon, title, description, hideOverflow, href, children, className, noPadding, noMargin, style }: Props) => {
 
   const content = <div className="card-body" style={{ padding: noPadding ? '0': undefined }} >
     {title && <h5 className="card-title">
@@ -29,7 +30,7 @@ export const Card = ({ icon, title, description, hideOverflow, href, children, c
     {children}
   </div>
 
-  const mainClassName = `card mb-3 ${className ?? ""} ${hideOverflow ? "hide-overflow" : ""}`
+  const mainClassName = `card ${noMargin ? "" : "mb-3"} ${className ?? ""} ${hideOverflow ? "hide-overflow" : ""}`
 
   if (!!href) {
     return <Link className={`${mainClassName} text-decoration-none`} href={href} style={style}>
