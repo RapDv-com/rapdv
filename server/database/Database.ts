@@ -22,6 +22,9 @@ export class Database {
   public static IGNORE_NUMBER: number = -1
   public static SORT_NEWEST_FIRST = { createdAt: -1 }
   public static SORT_OLDEST_FIRST = { createdAt: 1 }
+  
+  public static ASC = 1 
+  public static DESC = -1
 
   private static RECONNECT_AFTER_MS = 20000
   private static RECONNECT_MAX_TRIES = 10
