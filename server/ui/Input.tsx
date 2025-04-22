@@ -91,7 +91,7 @@ export class Input extends React.Component<Props & React.InputHTMLAttributes<HTM
     if (isRadio) {
       return <div className={marginBottomClassName}>
       <label className="form-check">
-        <input id={`input${name}`} className="form-check-input" type="checkbox" {...otherProps} name={name} aria-label={placeholderText} value={value} />
+        <input id={`input${name}`} className="form-check-input" type="radio" {...otherProps} name={name} aria-label={placeholderText} value={value} />
         <div className="form-check-label">
           <>{labelText}</>
         </div>
