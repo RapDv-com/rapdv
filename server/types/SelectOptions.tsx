@@ -34,6 +34,22 @@ export class SelectOptions {
     return results
   }
 
+  public static getUsaStates = (): Option[] => {
+    const states = CountriesList.getUsaStatesAsJson()
+    const results: Option[] = [
+      {
+        title: "Please select, you can type it",
+        value: "",
+        disabled: true
+      },
+      ...states.map((state) => ({
+        title: state.name,
+        value: state.code
+      }))
+    ]
+    return results
+  }
+
   public static getEuCountries = (): Option[] => {
     const euCountries = CountriesList.getEuCountriesList()
     const countries = CountriesList.getCountriesAsJson()
