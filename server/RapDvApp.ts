@@ -215,7 +215,7 @@ export abstract class RapDvApp {
     const urlHasParameters = !!["*", "+", ":", ";", "?", "{", "}", "[", "]", "{", "}", "$", "\\"].find((character) => urlPath.includes(character))
 
     const isPublicUrlAdded: boolean = !!this.publicUrls.find((publicUrl) => publicUrl.path === urlPath)
-    if (!isPublicUrlAdded && noRestructions && !urlHasParameters) {
+    if (!isPublicUrlAdded && noRestructions && !urlHasParameters && !disableIndexing) {
       if (Types.isString(path)) {
         this.publicUrls.push({ path: path as string, priority: 0.5, changefreq: "weekly" })
       } else {
