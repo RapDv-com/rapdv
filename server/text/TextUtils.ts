@@ -868,6 +868,13 @@ export class TextUtils {
     return text.split("").reverse().join("")
   }
 
+  public static stripPunctuation(text: string): string {
+    return text
+      .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()@\[\]<>?"'|\\]/g, '') // Remove punctuation
+      .replace(/\s+/g, ' ') // Normalize spaces
+      .trim();
+  }
+
   public static removeHtmlTags(html: string, replaceWith: string = ""): string {
     html = html.replace(/<\/?[^>]+(>|$)/g, replaceWith)
     html = html.replace(/&nbsp;/g, replaceWith)
