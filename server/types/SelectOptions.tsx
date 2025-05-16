@@ -1,5 +1,6 @@
 // Copyright (C) Konrad Gadzinowski
 
+import { TextUtils } from "../text/TextUtils"
 import { Option } from "../ui/Select"
 import { CountriesList } from "./CountriesList"
 import { Currency } from "./Currency"
@@ -71,7 +72,7 @@ export class SelectOptions {
 
   private static getOptionsFromEnum = (options): Option[] => [
     ...Object.values(options).map((option: any) => ({
-      title: option,
+      title: TextUtils.toTitleCase(option, true),
       value: option
     }))
   ]
