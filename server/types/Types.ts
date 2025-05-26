@@ -26,4 +26,9 @@ export class Types {
     if (isNaN(result)) return defaultVal
     return result
   }
+
+  public static isValidEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
 }
