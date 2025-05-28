@@ -26,6 +26,7 @@ import { CollectionImageFile } from "./database/CollectionImageFile"
 import { LogType } from "./database/CollectionLog"
 import express from "express"
 import bodyParser from "body-parser"
+import { CollectionUserSession } from "./database/CollectionUserSession"
 
 export type EndpointLogic = (req: Request, res: Response, next: NextFunction, app: RapDvApp, mailer: Mailer) => void
 export type TaskLogic = () => void
@@ -108,6 +109,7 @@ export abstract class RapDvApp {
 
   public startAllRecurringTasks = () => {
     CollectionImageFile.startJobForRemovingAllUnusedImages()
+    CollectionUserSession.startJobForRemovingAllExpiredSessions()
     this.startRecurringTasks(this.mailer)
   }
 

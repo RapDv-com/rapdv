@@ -3,10 +3,13 @@
 import { Database } from "./Database"
 import mongoose, { Schema } from "mongoose"
 import { Collection } from "./Collection"
+import { Tasks } from "../tasks/Tasks"
 
 export class CollectionUserSession extends Collection {
   
   public static DEFAULT_EXPERIATION_TIME_MS = 365 * 24 * 60 * 60 * 1000 // One year by default
+  private static REMOVE_EXPIRED_SESSIONS_EVERY_MS: number = 86400000 // 24h
+  private static REMOVE_EXPIRED_SESSIONS_TIMER_KEY = "REMOVE_EXPIRED_SESSIONS"
 
   constructor() {
     super(
@@ -53,6 +56,7 @@ export class CollectionUserSession extends Collection {
     })
 
     await newInstance.save()
+    
     return newInstance
   }
 
@@ -142,5 +146,29 @@ export class CollectionUserSession extends Collection {
       console.warn("Couldn't complete CollectionUserSession.removeAllUserSessions. " + error)
       return null
     }
+  }
+
+  public static removeAllExpiredSessions = async () => {
+    const collectionUserSession = Collection.get("UserSession") as CollectionUserSession
+
+    try {
+      const result = await collectionUserSession.model.deleteMany({
+        expiresDate: { $lt: new Date() }
+      })
+      return result
+    } catch (error) {
+      console.warn("Couldn't complete CollectionUserSession.removeAllExpiredSessions. " + error)
+      return null
+    }
+  }
+
+  public static stopJobForRemovingAllExpiredSessions() {
+    Tasks.stopJob(CollectionUserSession.REMOVE_EXPIRED_SESSIONS_TIMER_KEY)
+  }
+
+  public static startJobForRemovingAllExpiredSessions() {
+    Tasks.startJob(CollectionUserSession.REMOVE_EXPIRED_SESSIONS_TIMER_KEY,
+      CollectionUserSession.removeAllExpiredSessions,
+      CollectionUserSession.REMOVE_EXPIRED_SESSIONS_EVERY_MS)
   }
 }
