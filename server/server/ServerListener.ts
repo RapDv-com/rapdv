@@ -13,6 +13,7 @@ import passport from "passport"
 import mongoose from "mongoose"
 import { CollectionUserSession } from "../database/CollectionUserSession"
 import { Git } from "../system/Git"
+import { Request } from "./Request"
 
 export class ServerListener {
   public express = express()
@@ -29,11 +30,11 @@ export class ServerListener {
       resave: false,
       saveUninitialized: false,
       store: MongoStore.create({
-        client: mongoose.connection.getClient()
+        client: mongoose.connection.getClient(),
       }),
       secret: process.env.SESSION_SECRET,
       cookie: {
-        maxAge: CollectionUserSession.DEFAULT_EXPERIATION_TIME_MS
+        maxAge: undefined
       }
     }
 
@@ -50,6 +51,17 @@ export class ServerListener {
     this.express.use(flash())
     this.express.use(lusca.xframe("SAMEORIGIN"))
     this.express.use(lusca.xssProtection(true))
+
+    this.express.use((req: Request, res, next) => {
+      // Set session duration based on login state
+      const isLoggedIn = !!req.user
+
+      req.session.cookie.maxAge = isLoggedIn
+        ? CollectionUserSession.DEFAULT_USER_EXPERIATION_TIME_MS
+        : CollectionUserSession.DEFAULT_GUEST_EXPERIATION_TIME_MS // Prevent session overflow
+
+      next()
+    });
 
     this.express.use("/client", express.static("./client"))
     this.express.use("/dist", express.static("./dist"))

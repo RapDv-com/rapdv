@@ -7,7 +7,8 @@ import { Tasks } from "../tasks/Tasks"
 
 export class CollectionUserSession extends Collection {
   
-  public static DEFAULT_EXPERIATION_TIME_MS = 365 * 24 * 60 * 60 * 1000 // One year by default
+  public static DEFAULT_USER_EXPERIATION_TIME_MS = 365 * 24 * 60 * 60 * 1000 // 1yr
+  public static DEFAULT_GUEST_EXPERIATION_TIME_MS = 30 * 60 * 1000 // 30min
   private static REMOVE_EXPIRED_SESSIONS_EVERY_MS: number = 86400000 // 24h
   private static REMOVE_EXPIRED_SESSIONS_TIMER_KEY = "REMOVE_EXPIRED_SESSIONS"
 
@@ -45,7 +46,7 @@ export class CollectionUserSession extends Collection {
     // Create new session
     const collectionUserSession = Collection.get("UserSession") as CollectionUserSession
     let UserSession = collectionUserSession.model
-    let expiresDate = new Date(new Date().getTime() + self.DEFAULT_EXPERIATION_TIME_MS)
+    let expiresDate = new Date(new Date().getTime() + self.DEFAULT_USER_EXPERIATION_TIME_MS)
 
     let newInstance = new UserSession({
       user,
