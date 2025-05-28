@@ -27,7 +27,7 @@ export class ServerListener {
   init = () => {
     const sessionOptions: any = {
       resave: true,
-      saveUninitialized: true,
+      saveUninitialized: false,
       store: MongoStore.create({
         client: mongoose.connection.getClient()
       }),
