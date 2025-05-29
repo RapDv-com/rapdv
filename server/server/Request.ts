@@ -28,6 +28,7 @@ type RequestExtensions = {
   user?: HydratedDocument<any>
   files?: File[]
   session?: any
+  isBot?: boolean
   error: string
 }
 
