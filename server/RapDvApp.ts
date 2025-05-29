@@ -27,7 +27,6 @@ import { LogType } from "./database/CollectionLog"
 import express from "express"
 import bodyParser from "body-parser"
 import { CollectionUserSession } from "./database/CollectionUserSession"
-import { Middleware } from "./server/Middleware"
 
 export type EndpointLogic = (req: Request, res: Response, next: NextFunction, app: RapDvApp, mailer: Mailer) => void
 export type TaskLogic = () => void
@@ -254,7 +253,7 @@ export abstract class RapDvApp {
       bodyParser.json(),
       enableFilesUpload ? this.upload.core.any() : this.upload.core.none(),
       this.upload.logUploadError,
-      Middleware.useIfNotBot(lusca({ csrf: true })),
+      lusca({ csrf: true }),
       checkAuthorization,
       this.beforeRouteIsRendered(restrictions),
       Auth.checkSystem,
@@ -262,7 +261,7 @@ export abstract class RapDvApp {
     ]
 
     if (reqType === ReqType.Get) {
-      this.router.get(path, Middleware.useIfNotBot(lusca({ csrf: true })), checkAuthorization, this.beforeRouteIsRendered(restrictions), Auth.checkSystem, logic)
+      this.router.get(path, lusca({ csrf: true }), checkAuthorization, this.beforeRouteIsRendered(restrictions), Auth.checkSystem, logic)
     } else if (reqType === ReqType.Post) {
       this.router.post(...postSteps)
     } else if (reqType === ReqType.Put) {
@@ -292,25 +291,25 @@ export abstract class RapDvApp {
     const checkCsrf = !skipCsrfCheck
 
     if (reqType === ReqType.Get) {
-      this.router.get(path, Middleware.useIfNotBot(lusca({ csrf: checkCsrf })), checkAuthorization, this.beforeEndpointIsCalled(restrictions), Auth.checkSystem, executeLogic)
+      this.router.get(path, lusca({ csrf: checkCsrf }), checkAuthorization, this.beforeEndpointIsCalled(restrictions), Auth.checkSystem, executeLogic)
     } else if (reqType === ReqType.Post) {
       this.router.post(
         path,
         bodyParser.json(),
         enableFilesUpload ? this.upload.core.any() : this.upload.core.none(),
         this.upload.logUploadError,
-        Middleware.useIfNotBot(lusca({ csrf: checkCsrf })),
+        lusca({ csrf: checkCsrf }),
         checkAuthorization,
         this.beforeEndpointIsCalled(restrictions),
         Auth.checkSystem,
         executeLogic
       )
     } else if (reqType === ReqType.Put) {
-      this.router.put(path, bodyParser.json(), Middleware.useIfNotBot(lusca({ csrf: checkCsrf })), checkAuthorization, this.beforeEndpointIsCalled(restrictions), Auth.checkSystem, executeLogic)
+      this.router.put(path, bodyParser.json(), lusca({ csrf: checkCsrf }), checkAuthorization, this.beforeEndpointIsCalled(restrictions), Auth.checkSystem, executeLogic)
     } else if (reqType === ReqType.Patch) {
-      this.router.patch(path, bodyParser.json(), Middleware.useIfNotBot(lusca({ csrf: checkCsrf })), checkAuthorization, this.beforeEndpointIsCalled(restrictions), Auth.checkSystem, executeLogic)
+      this.router.patch(path, bodyParser.json(), lusca({ csrf: checkCsrf }), checkAuthorization, this.beforeEndpointIsCalled(restrictions), Auth.checkSystem, executeLogic)
     } else if (reqType === ReqType.Delete) {
-      this.router.delete(path, bodyParser.json(), Middleware.useIfNotBot(lusca({ csrf: checkCsrf })), checkAuthorization, this.beforeEndpointIsCalled(restrictions), Auth.checkSystem, executeLogic)
+      this.router.delete(path, bodyParser.json(), lusca({ csrf: checkCsrf }), checkAuthorization, this.beforeEndpointIsCalled(restrictions), Auth.checkSystem, executeLogic)
     }
   }
 

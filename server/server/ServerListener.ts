@@ -14,7 +14,6 @@ import mongoose from "mongoose"
 import { CollectionUserSession } from "../database/CollectionUserSession"
 import { Git } from "../system/Git"
 import { Request } from "./Request"
-import { Middleware } from "./Middleware"
 
 export class ServerListener {
   public express = express()
@@ -46,14 +45,23 @@ export class ServerListener {
     this.express.use(bodyParser.urlencoded({ extended: true }))
     this.express.use(cookieParser())
 
-    this.express.use(Middleware.checkIfItIsBot)
-    this.express.use(Middleware.useIfNotBot(session(sessionOptions)))
-    this.express.use(Middleware.useIfNotBot(passport.initialize()))
-    this.express.use(Middleware.useIfNotBot(passport.session()))
-    this.express.use(Middleware.useIfNotBot(flash()))
-    this.express.use(Middleware.useIfNotBot(lusca.xframe("SAMEORIGIN")))
-    this.express.use(Middleware.useIfNotBot(lusca.xssProtection(true)))
-    this.express.use(Middleware.useIfNotBot(Middleware.setCookieLifetime));
+    this.express.use(session(sessionOptions))
+    this.express.use(passport.initialize())
+    this.express.use(passport.session())
+    this.express.use(flash())
+    this.express.use(lusca.xframe("SAMEORIGIN"))
+    this.express.use(lusca.xssProtection(true))
+
+    this.express.use((req: Request, res, next) => {
+      // Set session duration based on login state
+      const isLoggedIn = !!req.user
+
+      req.session.cookie.maxAge = isLoggedIn
+        ? CollectionUserSession.DEFAULT_USER_EXPERIATION_TIME_MS
+        : CollectionUserSession.DEFAULT_GUEST_EXPERIATION_TIME_MS // Prevent session overflow
+
+      next()
+    });
 
     this.express.use("/client", express.static("./client"))
     this.express.use("/dist", express.static("./dist"))

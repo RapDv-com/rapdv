@@ -2,9 +2,6 @@
 
 export class HtmlFlash {
   public static normalizeFlash(req, name) {
-    if (!req.session) {
-      return
-    }
     let messages = req.flash(name)
     if (!messages || messages == "") return
 

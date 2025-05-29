@@ -32,9 +32,6 @@ export class FlashMessages extends React.Component<Props> {
   render = (): ReactNode | string => {
     const { req } = this.props
     const request: any = req
-    if (!req.session) {
-      return <></>
-    }
     const messages = request.flash()
 
     return (
