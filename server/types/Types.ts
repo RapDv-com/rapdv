@@ -28,7 +28,11 @@ export class Types {
   }
 
   public static isValidEmail = (email: string): boolean => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-};
+    if (!Types.isTextDefined(email)) {
+      return false
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(email)
+  };
 }
