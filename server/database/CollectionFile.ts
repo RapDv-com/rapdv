@@ -97,7 +97,7 @@ export class CollectionFile extends Collection {
             return this.data
           }
         } catch (error) {
-          console.error("Couldn't load file data. ", error)
+          console.error(`Couldn't load file data. Bucket: ${process.env.AWS_S3_BUCKET_NAME}, file key: ${this.s3Key} `, error)
           return null
         }
       }
