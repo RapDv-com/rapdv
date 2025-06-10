@@ -345,8 +345,8 @@ export abstract class RapDvApp {
     next()
   }
 
-  public addCollection = (name: string, schema: SchemaDefinition, index?: IndexDefinition): Collection => {
-    return new Collection(name, schema, index)
+  public addCollection = (name: string, schema: SchemaDefinition, indexes?: IndexDefinition[]): Collection => {
+    return new Collection(name, schema, indexes)
   }
 
   public addDbEvolution = (

@@ -22,10 +22,10 @@ export class CollectionUserSession extends Collection {
         userAgent: String,
         expiresDate: Date
       },
-      {
+      [{
         user: "text",
         sessionId: "text"
-      },
+      }],
       (schema: Schema): Schema => {
         schema.methods.isValid = function () {
           let expiriesTime = this.expiresDate.getTime() - Date.now()

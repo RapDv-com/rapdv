@@ -69,12 +69,12 @@ export class CollectionUser extends Collection {
           default: UserRole.User
         }
       },
-      {
+      [{
         firstName: "text",
         lastName: "text",
         email: "text",
         role: "text"
-      },
+      }],
       (schema: Schema) => {
         schema.methods.getFullName = function (): string {
           let fullName = this.firstName

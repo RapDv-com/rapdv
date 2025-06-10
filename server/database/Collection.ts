@@ -112,7 +112,7 @@ export class Collection {
 
   private name: string
 
-  constructor(name: string, schema: SchemaDefinition, index?: IndexDefinition, modifySchema?: (schema: Schema) => Schema) {
+  constructor(name: string, schema: SchemaDefinition, indexes?: IndexDefinition[], modifySchema?: (schema: Schema) => Schema) {
     this.name = name
 
     if (Collection.doesAlreadyExists(name)) {
@@ -120,7 +120,11 @@ export class Collection {
     }
 
     let collection = new Schema(schema, { timestamps: true })
-    if (!!index) collection.index(index)
+    if (!!indexes && indexes.length > 0) {
+      for (const index of indexes) {
+        collection.index(index)
+      }
+    }
     if (!!modifySchema) collection = modifySchema(collection)
 
     const model = mongoose.model(name, collection)
