@@ -10,6 +10,7 @@ import mongoose from "mongoose"
 import { Mockgoose } from "mockgoose"
 import { CollectionSystem } from "./CollectionSystem"
 import { Collection } from "./Collection"
+import { RapDvApp } from "../RapDvApp"
 
 export enum QueryType {
   Include = "inlcude",
@@ -272,7 +273,7 @@ export class Database {
 
   private connectToMongoDb() {
     mongoose.connect(this.mongoDbUri, {
-      autoIndex: process.env.AUTO_INDEX === "true",
+      autoIndex: process.env.AUTO_INDEX === "true" || !RapDvApp.isProduction(),
     })
   }
 }
