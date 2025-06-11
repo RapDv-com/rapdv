@@ -13,7 +13,7 @@ import { ReactNode } from "react"
 import { Database } from "./database/Database"
 import { Collection } from "./database/Collection"
 import { Response } from "express"
-import { IndexDefinition, SchemaDefinition } from "mongoose"
+import { IndexDefinition, Schema, SchemaDefinition } from "mongoose"
 import { Auth } from "./auth/Auth"
 import { Role } from "./Role"
 import { UserRole } from "./database/CollectionUser"
@@ -346,8 +346,8 @@ export abstract class RapDvApp {
     next()
   }
 
-  public addCollection = (name: string, schema: SchemaDefinition, indexes?: IndexDefinition[]): Collection => {
-    return new Collection(name, schema, indexes)
+  public addCollection = (name: string, schema: SchemaDefinition, indexes?: IndexDefinition[], modifySchema?: (schema: Schema) => Schema): Collection => {
+    return new Collection(name, schema, indexes, modifySchema)
   }
 
   public addDbEvolution = (
