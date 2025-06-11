@@ -271,6 +271,8 @@ export class Database {
   }
 
   private connectToMongoDb() {
-    mongoose.connect(this.mongoDbUri)
+    mongoose.connect(this.mongoDbUri, {
+      autoIndex: process.env.AUTO_INDEX === "true",
+    })
   }
 }
