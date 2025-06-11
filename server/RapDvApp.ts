@@ -48,6 +48,7 @@ export abstract class RapDvApp {
   public abstract initAuth: () => Promise<void>
   public abstract getStorage: () => Promise<void>
   public abstract startRecurringTasks: (mailer: Mailer) => Promise<void>
+  public abstract addDatabaseEvolutions: () => Promise<void>
 
   protected MAX_FILES = 5
   protected MAX_FILE_SIZE_KB = 5120
