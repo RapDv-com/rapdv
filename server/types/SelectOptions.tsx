@@ -19,18 +19,29 @@ export class SelectOptions {
     }))
   ]
 
-  public static getCountries = (): Option[] => {
-    const countries = CountriesList.getCountriesAsJson()
+  public static getCountries = (supporedCountryCodes?: string[]): Option[] => {
+
+
+    const countryOptions = []
+    const allCountries = CountriesList.getCountriesAsJson()
+
+    for (const country of allCountries) {
+      if (supporedCountryCodes && supporedCountryCodes.length > 0 && !supporedCountryCodes.includes(country.countryCode)) {
+        continue
+      }
+      countryOptions.push({
+        title: country.countryName,
+        value: country.countryCode
+      })
+    }
+
     const results: Option[] = [
       {
         title: "Please select, you can type it",
         value: "",
         disabled: true
       },
-      ...countries.map((country) => ({
-        title: country.countryName,
-        value: country.countryCode
-      }))
+      ...countryOptions
     ]
     return results
   }
