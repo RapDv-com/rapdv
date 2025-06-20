@@ -14,8 +14,8 @@ export class CollectionImageFile extends Collection {
 
   public static DEFAULT_IMAGE_URL = "/client/assets/placeholder-image.svg"
 
-  private static REMOVE_UNUSED_IMAGES_EVERY_MS: number = 86400000 // 24h
-  private static REMOVE_UNUSED_IMAGES_OLDER_THEN_MS: number = 14400000 // 4h
+  private static REMOVE_UNUSED_IMAGES_EVERY_MS: number = 24 * 60 * 60 * 1000 // 24h
+  private static REMOVE_UNUSED_IMAGES_OLDER_THEN_MS: number = 4 * 60 * 60 * 1000 // 4h
   private static REMOVE_UNUSED_IMAGES_TIMER_KEY = "REMOVE_UNUSED_IMAGES"
   private static NAME = "ImageFile"
 
