@@ -2,6 +2,7 @@
 
 import mongoose, { HydratedDocument, IndexDefinition, Model, ObjectId, Schema, SchemaDefinition, SortOrder } from "mongoose"
 import { TextUtils } from "../text/TextUtils"
+import { Database } from "./Database"
 
 export class Collection {
   public model: Model<any, any, any, any, any>
@@ -145,7 +146,7 @@ export class Collection {
           query = query.populate(populateName)
         }
       }
-      const sortOrder = sort ? sort : { createdAt: 1 }
+      const sortOrder = sort ? sort : Database.SORT_OLDEST_FIRST
       let result = await query.sort(sortOrder).exec()
       return result
     } catch (error) {
