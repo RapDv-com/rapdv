@@ -5,7 +5,7 @@ export class SocialTags {
     title: string, 
     description: string,
     imageUrl: string, 
-    twitterTag: string, 
+    twitterTag?: string, 
   ) => {
     return [
     `<meta property="og:title" content="${title}">`,
@@ -16,8 +16,8 @@ export class SocialTags {
     `<meta property="og:type" content="website">`,
 
     `<meta name="twitter:card" content="summary_large_image">`,
-    `<meta name="twitter:site" content="${twitterTag}">`,
-    `<meta name="twitter:creator" content="${twitterTag}">`,
+    twitterTag ? `<meta name="twitter:site" content="${twitterTag}">` : '',
+    twitterTag ? `<meta name="twitter:creator" content="${twitterTag}">` : '',
     `<meta name="twitter:title" content="${title}">`,
     `<meta name="twitter:description" content="${description}">`,
     `<meta name="twitter:image:src" content="${imageUrl}">`,
