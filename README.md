@@ -8,7 +8,7 @@ Build web applications quickly. [Docs](https://rapdv.com/docs).
 - [Blog with CMS](https://github.com/RapDv-com/rapdv-cms).  
 
 ## Commercial Examples
-- [Neudesk - Marketplace for Finding Business Services](https://neudesk.com)  
+- [Neudesk - Marketplace for Finding Marketing Services](https://neudesk.com)  
 
 ## Back-end technologies:
 - Node.js
