@@ -96,6 +96,7 @@ export class ServerListener {
       title,
       description,
       layout: "layout",
+      theme: process.env.APP_THEME,
       disableIndexing,
       isProduction: this.isProduction,
       styleTags,
