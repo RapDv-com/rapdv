@@ -43,7 +43,7 @@
   {{headAdditionalTags}}
 
   </head>
-  <body id='body'>
+  <body id='body' {{#if theme}}class="{{theme}}"{{/if}}>
     {{{body}}}
     {{> scripts}}
 
