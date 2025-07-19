@@ -11,18 +11,20 @@ type Props = {
   className?: string
   href?: string
   hideNav?: boolean
+  customBrand?: ReactNode
 }
 
 export class Nav extends React.Component<Props> {
   render(): ReactNode | string {
-    const { appName, children, showIcon, icon, className, href, hideNav } = this.props
+    const { appName, children, showIcon, icon, className, href, hideNav, customBrand } = this.props
     return (
       <nav className={`navbar navbar-expand-lg ${className ?? "bg-light"}`}>
         <div className="container-fluid">
-          <NavbarBrand className="navbar-brand" href={href ?? "/"}>
+          {!customBrand && <NavbarBrand className="navbar-brand" href={href ?? "/"}>
             {showIcon && <AppIcon src={icon ?? "/client/assets/favicon.svg"} alt={`${appName} icon`} />}
             {appName}
-          </NavbarBrand>
+          </NavbarBrand>}
+          {!!customBrand && customBrand}
           {!hideNav && <button
             className="navbar-toggler"
             type="button"
