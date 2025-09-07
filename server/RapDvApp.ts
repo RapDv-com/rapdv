@@ -37,6 +37,7 @@ export type AppBasicInfo = {
   name: string
   description: string
   themeColor: string
+  backgroundColor?: string
   customManifest?: JSON
 }
 

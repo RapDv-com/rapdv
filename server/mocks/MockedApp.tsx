@@ -20,6 +20,7 @@ export class MockedApp extends RapDvApp {
   getBasicInfo = () => ({
     name: "Test App",
     description: "It's a test app",
+    backgroundColor: "#ffffff",
     themeColor: "#000000"
   })
 
