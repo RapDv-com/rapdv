@@ -73,7 +73,7 @@ export class PageMetadata {
         }
       ],
       description: this.info.description,
-      background_color: this.info.backgroundColor ?? "#ffffff",
+      background_color: this.info.themeColor,
       theme_color: this.info.themeColor,
       developer: {
         name: "Konrad Gadzinowski"

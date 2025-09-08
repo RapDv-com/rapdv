@@ -35,7 +35,7 @@ export class CollectionUser extends Collection {
     super(
       "User",
       {
-        email: { type: String, unique: true },
+        email: { type: String, unique: true, sparse: true },
 
         emailVerified: { type: Boolean, default: false },
         emailVerificationCode: String, // For AuthEmailCodes
