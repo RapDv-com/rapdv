@@ -133,14 +133,14 @@ export class Database {
     }
   }
 
-  public async initDatabaseContent(customRoles: string[]) {
+  public async initDatabaseContent(customRoles: string[], customUserProps: any = {}) {
     // Init schemas
     new CollectionLog()
     new CollectionFile()
     new CollectionImageFile()
     new CollectionSystem()
     CollectionSystem.create()
-    new CollectionUser(customRoles)
+    new CollectionUser(customRoles, customUserProps)
     new CollectionUserSession()
   }
 

@@ -118,7 +118,7 @@ export class Server {
     this.database = app.createDatabase()
     await this.database.init(process.env.MONGODB_URI, this.isProduction)
 
-    await this.database.initDatabaseContent(app.setRoles())
+    await this.database.initDatabaseContent(app.setRoles(), app.setCustomUserProps() ?? {})
     const appListener = new ServerListener(this.isProduction)
     const appExpress = appListener.express
 

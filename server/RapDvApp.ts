@@ -385,6 +385,8 @@ export abstract class RapDvApp {
 
   public setRoles = (): string[] => []
 
+  public setCustomUserProps = (): any => ({})
+
   public createDatabase = () => new Database()
 
   public redirectToPage = (req: Request, res: Response, next: NextFunction, url: string, flashMsg?: string, flashType: FlashType = FlashType.Warning) => {

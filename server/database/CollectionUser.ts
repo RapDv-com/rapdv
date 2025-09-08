@@ -30,7 +30,7 @@ export class CollectionUser extends Collection {
 
   public static getRoles = (): string[] => CollectionUser.ROLES
 
-  constructor(customRoles: string[]) {
+  constructor(customRoles: string[], customProps: any = {}) {
     CollectionUser.ROLES = [UserRole.User, UserRole.Admin, ...customRoles]
     super(
       "User",
@@ -40,7 +40,7 @@ export class CollectionUser extends Collection {
         emailVerified: { type: Boolean, default: false },
         emailVerificationCode: String, // For AuthEmailCodes
         verificationCodeEmailSentDate: { type: Date, default: new Date(0) },
-
+        
         password: String,
 
         failedLoginAttempts: {
@@ -67,7 +67,8 @@ export class CollectionUser extends Collection {
           type: String,
           enum: CollectionUser.ROLES,
           default: UserRole.User
-        }
+        },
+        ...customProps
       },
       [{
         firstName: "text",
