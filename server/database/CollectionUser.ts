@@ -35,7 +35,7 @@ export class CollectionUser extends Collection {
     super(
       "User",
       {
-        email: { type: String, unique: true, sparse: true },
+        email: { type: String, unique: true, sparse: true, lowercase: true, trim: true },
 
         emailVerified: { type: Boolean, default: false },
         emailVerificationCode: String, // For AuthEmailCodes
@@ -70,7 +70,12 @@ export class CollectionUser extends Collection {
         },
         ...customProps
       },
-      [{
+      [
+        { firstName: 1},
+        { lastName: 1 },
+        { email: 1 },
+        { role: 1 },
+        {
         firstName: "text",
         lastName: "text",
         email: "text",
