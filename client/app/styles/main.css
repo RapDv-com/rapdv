@@ -1,0 +1,11 @@
+main {
+  position: relative;
+}
+
+@media print
+{
+    .no-print, .no-print *
+    {
+        display: none !important;
+    }
+}

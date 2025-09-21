@@ -1,28 +1,25 @@
 // Copyright (C) Konrad Gadzinowski
 
 import Pjax from "pjax"
-import "bootstrap/dist/css/bootstrap.css"
-import "bootstrap/dist/js/bootstrap.js"
-import "bootstrap-icons/font/bootstrap-icons.css"
 import "nprogress/nprogress.css"
 import NProgress from "nprogress/nprogress.js"
-import { ClientPage, PagesCtrl } from "../elements/PagesCtrl"
-import { Form } from "../elements/Form"
+import { PagesCtrl } from "../elements/PagesCtrl"
 import "./styles/main.scss"
 import "./styles/sizing.scss"
+import Pjax from "pjax"
 
 export class AppClient {
   initiated = false
-  pagesCtrl: PagesCtrl
+  pagesCtrl
 
-  public pjax: Pjax
-  private onPageLoaded?: () => void
+  pjax
+  onPageLoaded
 
-  constructor(onPageLoaded?: () => void) {
+  constructor(onPageLoaded) {
     this.onPageLoaded = onPageLoaded
   }
 
-  start = (pages?: Array<ClientPage>) => {
+  start = (pages) => {
     if (this.initiated) return
     this.initiated = true
     this.setupPjax()

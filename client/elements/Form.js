@@ -1,10 +1,10 @@
 // Copyright (C) Konrad Gadzinowski
 
 export class Form {
-  public static setupForms = () => {
+  static setupForms = () => {
     // Validate forms
     // Fetch all the forms we want to apply custom Bootstrap validation styles to
-    const forms: any = document.querySelectorAll(".needs-validation")
+    const forms = document.querySelectorAll(".needs-validation")
 
     // Loop over them and prevent submission
     for (const form of forms) {

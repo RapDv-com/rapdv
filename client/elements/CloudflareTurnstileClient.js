@@ -1,22 +1,21 @@
-declare const turnstile: any
 
 export class CloudflareTurnstileClient {
 
-  private static theme: string = "light"
+  static theme = "light"
 
-  public static init(theme: string = "light") {
+  static init(theme = "light") {
     CloudflareTurnstileClient.theme = theme;
     
     if (!process.env.CLOUDFLARE_TURNSLIDE_KEY_CLIENT || process.env.CLOUDFLARE_TURNSLIDE_KEY_CLIENT?.trim().length === 0) {
       return
     }
     
-    (window as any).onloadTurnstileCallback = () => {
+    window.onloadTurnstileCallback = () => {
       this.initCloudflareTurnslide()
     }
   }
 
-  private static initCloudflareTurnslide() {
+  static initCloudflareTurnslide() {
     turnstile.render("#cloudFlareTurnslide", {
       sitekey: process.env.CLOUDFLARE_TURNSLIDE_KEY_CLIENT,
       theme: CloudflareTurnstileClient.theme,
