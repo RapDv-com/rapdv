@@ -1,6 +1,5 @@
 // Copyright (C) Konrad Gadzinowski
 
-import React, { ReactNode } from "react"
 import { FlashType, Request } from "../server/Request"
 import { check } from "express-validator"
 import { TextUtils } from "../text/TextUtils"
@@ -61,7 +60,7 @@ export class Form {
     }
   }
 
-  public static getParams = async (req: Request, elementsPromise: Promise<ReactNode>, formName?: string): Promise<FormParams> => {
+  public static getParams = async (req: Request, elementsPromise: Promise<any>, formName?: string): Promise<FormParams> => {
     const elements: any = await elementsPromise
     let errors: string[] = []
 
@@ -191,7 +190,7 @@ export class Form {
 
       return form
     }
-    const form = await analyzeChildren(<>{elements}</>)
+    const form = await analyzeChildren(elements)
 
     if (errors.length > 0) {
       req.flash(FlashType.Errors, errors)
