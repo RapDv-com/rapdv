@@ -13,7 +13,7 @@ export const DivHtml = ({ children, className }: Props) => {
     <div
       class=${className}
     >
-      ${HtmlUtils.sanitizeForInjectionTags(children)}
+      ${HtmlUtils.sanitizeForInjectionTags(children)}\
     </div>
   `;
 };
