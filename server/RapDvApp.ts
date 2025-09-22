@@ -189,7 +189,7 @@ export abstract class RapDvApp {
         if (customLayout) {
           data.layout = customLayout
         }
-        this.listener.renderPage(req, res, "page", pageTitle, pageDescription, pageDisableIndexing, styleTags, headAdditionalTags, data)
+        this.listener.renderPage(req, res, pageTitle, pageDescription, pageDisableIndexing, styleTags, headAdditionalTags, data)
       } catch (error) {
         console.error("Error on rendering views. " + error)
       } finally {
@@ -234,7 +234,7 @@ export abstract class RapDvApp {
     enableFilesUpload?: boolean
   ) => {
     const renderedUi = await content
-    const logic = async (req: Request, res: Response) => this.listener.renderView(res, "page", renderedUi)
+    const logic = async (req: Request, res: Response) => this.listener.renderView(res, renderedUi)
     this.addGenericRoute(path, reqType, logic, restrictions, enableFilesUpload)
   }
 

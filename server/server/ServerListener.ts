@@ -62,11 +62,11 @@ export class ServerListener {
     this.express.use("/dist", express.static("./dist"))
   }
 
-  renderView = (res, viewName: string, content?: any) => {
+  renderView = (res, content?: any) => {
     res.render(viewName, { layout: null, content })
   }
 
-  renderPage = (req, res, viewName: string, title: string, description: string, disableIndexing: boolean, styleTags: any, headAdditionalTags: any, data?: any) => {
+  renderPage = (req, res, title: string, description: string, disableIndexing: boolean, styleTags: any, headAdditionalTags: any, data?: any) => {
 
     let clientFilesId = ""
     if (this.isProduction) {
