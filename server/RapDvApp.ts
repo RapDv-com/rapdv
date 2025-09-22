@@ -177,15 +177,13 @@ export abstract class RapDvApp {
         let contentText = ReactDOMServer.renderToStaticMarkup(sheet.collectStyles(renderedUi))
 
         // Inject CSRF token
-        contentText = contentText.replace(/{{_csrf}}/g, res.locals._csrf)
+        const content = contentText.replace(/{{_csrf}}/g, res.locals._csrf)
 
         const pageTitle = await this.getMetaText(req, res, title, "---")
         const pageDescription = await this.getMetaText(req, res, description, "")
         const pageDisableIndexing = await this.getMetaBoolean(req, res, disableIndexing, false)
-        const headAdditionalTagsData = await this.getHeadTags(req, res)
-        const headAdditionalTags = new hbs.SafeString(headAdditionalTagsData)
-        const content = new hbs.SafeString(contentText)
-        const styleTags = new hbs.SafeString(sheet.getStyleTags())
+        const headAdditionalTags = await this.getHeadTags(req, res)
+        const styleTags = sheet.getStyleTags()
 
         const data: any = { content }
         if (customLayout) {
