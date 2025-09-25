@@ -1,53 +1,43 @@
 // Copyright (C) Konrad Gadzinowski
 
-import React, { ReactNode } from "react"
-import styled from "styled-components"
-import { Request } from "../server/Request"
-import { Types } from "../types/Types"
+import { html } from "htm/preact"
 
-type Props = {
-  req: Request
-}
-
-export class FlashMessages extends React.Component<Props> {
-  renderMsg = (text: any) => {
-    if (Types.isString(text)) return text
-    return JSON.stringify(text)
+export function FlashMessages({ req }) {
+  const renderMsg = (text) => {
+    return typeof text === "string" ? text : JSON.stringify(text)
   }
 
-  renderMessages = (messages: any[], type: string) => {
+  const renderMessages = (messages, type) => {
     if (!messages) return null
-    return (
-      <div className={`alert alert-${type} fade show`}>
-        <Container>
-          {messages.map(({ msg }, index) => (
-            <div key={index}>{this.renderMsg(msg)}</div>
-          ))}
-        </Container>
-        <button type="button" data-dismiss="alert" className="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    return html`
+      <div class="alert alert-${type} fade show">
+        <div style=${{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "start",
+          justifyContent: "center",
+        }}>
+          ${messages.map(({ msg }, index) =>
+            html`<div key=${index}>${renderMsg(msg)}</div>`
+          )}
+        </div>
+        <button
+          type="button"
+          class="btn-close"
+          data-dismiss="alert"
+          data-bs-dismiss="alert"
+          aria-label="Close"
+        ></button>
       </div>
-    )
+    `
   }
 
-  render = (): ReactNode | string => {
-    const { req } = this.props
-    const request: any = req
-    const messages = request.flash()
+  const messages = req.flash()
 
-    return (
-      <>
-        {this.renderMessages(messages.errors, "danger")}
-        {this.renderMessages(messages.warning, "warning")}
-        {this.renderMessages(messages.info, "info")}
-        {this.renderMessages(messages.success, "success")}
-      </>
-    )
-  }
+  return html`
+    ${renderMessages(messages.errors, "danger")}
+    ${renderMessages(messages.warning, "warning")}
+    ${renderMessages(messages.info, "info")}
+    ${renderMessages(messages.success, "success")}
+  `
 }
-
-const Container = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: start;
-  justify-content: center;
-`

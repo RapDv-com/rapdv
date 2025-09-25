@@ -1,88 +1,63 @@
 // Copyright (C) Konrad Gadzinowski
 
-import React, { ReactNode } from "react"
+import { html } from "htm/preact"
 import { TextUtils } from "../text/TextUtils"
 import { Types } from "../types/Types"
 
-export type FieldInfo = {
-  key: string
-  title?: string
-  hide?: boolean
-  custom?: (entry: any, index: number) => ReactNode | string
-}
+export function List({ fields, data, hideHeader, className }) {
+  if (!fields || fields.length === 0) return null
 
-type Props = {
-  fields: FieldInfo[]
-  data: Array<any>
-  hideHeader?: boolean
-  className?: string
-}
-
-export class List extends React.Component<Props> {
-
-  private keyToTitle = (key: string) => {
+  const keyToTitle = (key) => {
     if (!Types.isString(key)) return key
-    const splitKey = key.split('.').join(' ')
+    const splitKey = key.split(".").join(" ")
     return TextUtils.toTitleCase(splitKey, true)
   }
 
-  /**
-   * Gets value by using key in a dot notation, e.g. user.data.email
-   */
-  private getObjectValue = (data: any, key: string) => {
-    const keys = key.split(".");
-    let currentData: any = data;
-
-    for (const keyPart of keys) {
-      if (currentData[keyPart] == null) {
-        return ""; // Key is not present in the object
+  const getObjectValue = (obj, key) => {
+    const keys = key.split(".")
+    let currentData = obj
+    for (const part of keys) {
+      if (currentData?.[part] == null) {
+        return ""
       }
-      currentData = currentData[keyPart];
+      currentData = currentData[part]
     }
-
-    return currentData;
+    return currentData
   }
 
-  render = (): ReactNode | string => {
-    const { fields, data, hideHeader, className } = this.props
-    if (!fields || fields.length === 0) return null
-    const tbodyClass = hideHeader ? "" : "table-group-divider"
+  const tbodyClass = hideHeader ? "" : "table-group-divider"
 
-    return (
-      <div className="table-responsive">
-        <table className={`table ${className ?? ""}`}>
-          {!hideHeader && <thead>
+  return html`
+    <div class="table-responsive">
+      <table class="table ${className ?? ""}">
+        ${!hideHeader &&
+        html`
+          <thead>
             <tr>
-              {fields.map((field, index) => {
+              ${fields.map((field, index) => {
                 if (field.hide) return null
-                let name = field.title
-                if (!name) name = this.keyToTitle(field.key)
-                return (
-                  <th key={index} scope="col">
-                    {name}
-                  </th>
-                )
+                const name = field.title ?? keyToTitle(field.key)
+                return html`<th key=${index} scope="col">${name}</th>`
               })}
             </tr>
-          </thead>}
-          <tbody className={tbodyClass}>
-            {data.map((entry, rowIndex) => (
-              <tr key={rowIndex}>
-                {fields.map((field, index) => {
+          </thead>
+        `}
+        <tbody class=${tbodyClass}>
+          ${data.map(
+            (entry, rowIndex) => html`
+              <tr key=${rowIndex}>
+                ${fields.map((field, index) => {
                   if (field.hide) return null
-                  let content: ReactNode | string = ""
-                  if (!!field.custom) {
-                    content = field.custom(entry, rowIndex)
-                  } else {
-                    content = this.keyToTitle(this.getObjectValue(entry, field.key))
-                  }
-                  return <td key={index}>{content}</td>
+                  const content = field.custom
+                    ? field.custom(entry, rowIndex)
+                    : keyToTitle(getObjectValue(entry, field.key))
+                  return html`<td key=${index}>${content}</td>`
                 })}
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    )
-  }
+            `
+          )}
+        </tbody>
+      </table>
+    </div>
+  `
 }
