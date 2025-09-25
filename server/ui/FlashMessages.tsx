@@ -1,6 +1,7 @@
 // Copyright (C) Konrad Gadzinowski
 
-import { html } from "htm/preact"
+import { html } from "../html/Html"
+
 
 export function FlashMessages({ req }) {
   const renderMsg = (text) => {

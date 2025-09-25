@@ -1,6 +1,6 @@
 // Copyright (C) Konrad Gadzinowski
 
-import { html } from "htm/preact"
+import { html } from "../html/Html"
 import { ReqType } from "../ReqType"
 import { InlineIcon } from "./InlineIcon"
 

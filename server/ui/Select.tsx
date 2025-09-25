@@ -1,6 +1,6 @@
 // Copyright (C) Konrad Gadzinowski
 
-import { html } from "htm/preact"
+import { html } from "../html/Html"
 import { TextUtils } from "../text/TextUtils"
 import { Types } from "../types/Types"
 

@@ -1,7 +1,7 @@
 // Copyright (C) Konrad Gadzinowski
 
-import { html } from "htm/preact"
 import url from "url"
+import { html } from "../html/Html"
 
 export function Paginator({
   req,

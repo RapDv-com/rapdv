@@ -1,7 +1,5 @@
-import { html } from "htm/preact"
 import { Auth } from "../auth/Auth"
-import { UserRole } from "../database/CollectionUser"
-import { Role } from "../Role"
+import { html } from "../html/Html"
 import { InlineIcon } from "./InlineIcon"
 
 export function Link(props) {
