@@ -1,10 +1,30 @@
 // Copyright (C) Konrad Gadzinowski
 
 import { html } from "../html/Html"
+import { Request } from "../server/Request"
 import { TextUtils } from "../text/TextUtils"
 import { Types } from "../types/Types"
 
-export function Select(props) {
+export type Option = {
+  value: string
+  title?: string
+  disabled?: boolean
+}
+
+type Props = {
+  req?: Request
+  options: string[] | Option[]
+  hideLabel?: boolean
+  className?: string
+  name: string
+  placeholder?: string
+  value?: string | number | boolean
+  required?: boolean
+  disabled?: boolean
+  [key: string]: any
+}
+
+export const Select = (props: Props) => {
   const { name, placeholder, value, req, options, hideLabel, className = "", ...otherProps } = props
   const valueFromReq = req ? req.body[name] : undefined
 

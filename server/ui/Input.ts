@@ -3,7 +3,28 @@
 import { html } from "../html/Html"
 import { TextUtils } from "../text/TextUtils"
 
-export function Input(props) {
+type Props = {
+  name: string
+  placeholder?: string
+  value?: string | number | boolean
+  required?: boolean
+  req?: Request
+  separateLabel?: boolean
+  label?: string | any | Element
+  marginBottomClass?: string
+  className?: string
+  type?: string
+  readOnly?: boolean
+  disabled?: boolean
+  minLength?: number
+  maxLength?: number
+  min?: number
+  max?: number
+  step?: number | "any"
+  [key: string]: any
+}
+
+export const Input = (props: Props) => {
   const {
     name,
     placeholder,

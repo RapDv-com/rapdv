@@ -4,7 +4,24 @@ import { html } from "../html/Html"
 import { ReqType } from "../ReqType"
 import { InlineIcon } from "./InlineIcon"
 
-export function SubmitForm(props) {
+type Props = {
+  children?: any
+  title?: string
+  submitText?: string
+  method?: ReqType
+  center?: boolean
+  disabled?: boolean
+  submitBtnClass?: string
+  submitBtnIcon?: string
+  hideSubmitButton?: boolean
+  noPjax?: boolean
+  noCsrf?: boolean
+  showActionInFixedPanel?: boolean
+  className?: string
+  [key: string]: any
+}
+
+export const SubmitForm = (props: Props) => {
   const {
     children,
     className = "",

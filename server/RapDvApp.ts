@@ -6,9 +6,7 @@ import { Express, NextFunction } from "express"
 import { ReqType } from "./ReqType"
 import { ServerListener } from "./server/ServerListener"
 import lusca from "lusca"
-import ReactDOMServer from "react-dom/server"
 import { Upload } from "./upload/Upload"
-import { ReactNode } from "react"
 import { Database } from "./database/Database"
 import { Collection } from "./database/Collection"
 import { Response } from "express"
@@ -26,6 +24,8 @@ import { LogType } from "./database/CollectionLog"
 import express from "express"
 import bodyParser from "body-parser"
 import { CollectionUserSession } from "./database/CollectionUserSession"
+import { VNode } from "preact"
+import render from "preact-render-to-string"
 
 export type EndpointLogic = (req: Request, res: Response, next: NextFunction, app: RapDvApp, mailer: Mailer) => void
 export type TaskLogic = () => void
@@ -43,7 +43,7 @@ export abstract class RapDvApp {
   public abstract getBasicInfo: () => AppBasicInfo
   public abstract getPages: () => Promise<void>
   public abstract getHeadTags: (req: Request, res: Response) => Promise<string>
-  public abstract getLayout: (req: Request, content: ReactNode, appInfo: AppBasicInfo, otherOptions?: any) => Promise<ReactNode>
+  public abstract getLayout: (req: Request, content: VNode | string, appInfo: AppBasicInfo, otherOptions?: any) => Promise<VNode>
   public abstract initAuth: () => Promise<void>
   public abstract getStorage: () => Promise<void>
   public abstract startRecurringTasks: (mailer: Mailer) => Promise<void>
@@ -135,7 +135,7 @@ export abstract class RapDvApp {
 
   private renderViews =
     (
-      ui: (req: Request, res: Response, next: NextFunction, app: RapDvApp, mailer: Mailer) => Promise<ReactNode | string>,
+      ui: (req: Request, res: Response, next: NextFunction, app: RapDvApp, mailer: Mailer) => Promise<VNode | string>,
       title?: string | SetText,
       description?: string | SetText,
       disableIndexing?: boolean | SetBoolean,
@@ -159,7 +159,7 @@ export abstract class RapDvApp {
     public renderView = async (req: Request,
       res: Response,
       next: NextFunction,
-      renderedUi: ReactNode,
+      renderedUi: VNode,
       title?: string | SetText,
       description?: string | SetText,
       disableIndexing?: boolean | SetBoolean,
@@ -174,7 +174,7 @@ export abstract class RapDvApp {
         HtmlFlash.normalizeFlash(req, "info")
         HtmlFlash.normalizeFlash(req, "success")
 
-        let contentText = ReactDOMServer.renderToStaticMarkup(sheet.collectStyles(renderedUi))
+        let contentText = render(renderedUi)
 
         // Inject CSRF token
         const content = contentText.replace(/{{_csrf}}/g, res.locals._csrf)
@@ -201,7 +201,7 @@ export abstract class RapDvApp {
   public addRoute = (
     path: string | { path: string, priority: number, changefreq: string },
     reqType: ReqType,
-    content: (req: Request, res: Response, next: NextFunction, app: RapDvApp, mailer: Mailer) => Promise<ReactNode | string>,
+    content: (req: Request, res: Response, next: NextFunction, app: RapDvApp, mailer: Mailer) => Promise<VNode | string>,
     title?: string | SetText,
     description?: string | SetText,
     restrictions?: (Role | UserRole | string)[],
@@ -229,7 +229,7 @@ export abstract class RapDvApp {
   public addSimpleRoute = async (
     path: string,
     reqType: ReqType,
-    content: Promise<ReactNode | string>,
+    content: Promise<VNode | string>,
     restrictions?: (Role | UserRole | string)[],
     enableFilesUpload?: boolean
   ) => {

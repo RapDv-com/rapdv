@@ -5,7 +5,7 @@ Tests to run before deployment:
 - You can add routes with `addSimpleRoute`
 - You can add routes with `addGenericRoute`
 - You can defined app icon in `client/assets/favicon.svg` and it will be used properly
-- You can set basic app info in the main App.tsx
+- You can set basic app info in the main App.ts
 - You can specify custom app layout
 - You can sepcify custom user roles
 - You can add custom collections for storing data

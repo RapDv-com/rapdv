@@ -3,7 +3,13 @@
 import { html } from "../html/Html"
 import { Link } from "./Link"
 
-export function Footer({ children, className = "", hideRapDvInfo }) {
+type Props = {
+  children?: any
+  className?: string
+  hideRapDvInfo?: boolean
+}
+
+export const Footer = ({ children, className = "", hideRapDvInfo }: Props) => {
   return html`
     <footer class=${className}>
       ${children}

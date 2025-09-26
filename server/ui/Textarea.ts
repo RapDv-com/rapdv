@@ -1,9 +1,27 @@
 // Copyright (C) Konrad Gadzinowski
 
 import { html } from "../html/Html"
+import { Request } from "../server/Request"
 import { TextUtils } from "../text/TextUtils"
 
-export function Textarea(props) {
+type Props = {
+  req?: Request
+  className?: string
+  label?: string
+  hideLabel?: boolean
+  rows?: number
+  name: string
+  placeholder?: string
+  value?: string | number | boolean
+  required?: boolean
+  readOnly?: boolean
+  minLength?: number
+  maxLength?: number
+  children?: any
+  [key: string]: any
+}
+
+export const Textarea = (props: Props) => {
   const { name, placeholder, children, value, hideLabel, req, className = "", label, ...otherProps } = props
   const valueFromReq = req ? req.body[name] : undefined
 

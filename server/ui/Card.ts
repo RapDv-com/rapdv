@@ -3,7 +3,20 @@
 import { html } from "../html/Html"
 import { InlineIcon } from "./InlineIcon"
 
-export function Card({
+type Props = {
+  icon?: string
+  title?: string | any | Element
+  description?: string | any | Element
+  hideOverflow?: boolean
+  href?: string
+  children?: any
+  className?: string
+  noPadding?: boolean
+  noMargin?: boolean
+  style?: any;
+}
+
+export const Card = ({
   icon,
   title,
   description,
@@ -14,7 +27,7 @@ export function Card({
   noPadding,
   noMargin,
   style = {}
-}) {
+}: Props) => {
   const content = html`
     <div class="card-body" style=${{ padding: noPadding ? "0" : undefined }}>
       ${title &&

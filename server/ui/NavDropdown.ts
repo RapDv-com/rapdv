@@ -3,8 +3,21 @@
 import { Auth } from "../auth/Auth"
 import { html } from "../html/Html"
 import { InlineIcon } from "./InlineIcon"
+import { UserRole } from "../database/CollectionUser"
+import { Role } from "../Role"
+import { Request } from "../server/Request"
 
-export function NavDropdown({
+type Props = {
+  title: string | React.ReactNode
+  icon?: string
+  req?: Request
+  restrictions?: (Role | UserRole | string)[]
+  className?: string
+  dropdownClassName?: string
+  children?: React.ReactNode
+}
+
+export const NavDropdown = ({
   title,
   icon,
   req,
@@ -12,7 +25,7 @@ export function NavDropdown({
   className = "",
   dropdownClassName = "",
   children,
-}) {
+}: Props) => {
   if (restrictions && !req) {
     throw "When setting restrictions to the NavDropdown, you also need to pass req"
   }

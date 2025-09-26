@@ -2,7 +2,18 @@
 
 import { html } from "../html/Html";
 
-export function Nav({
+type Props = {
+  appName: string
+  icon?: any
+  children?: any
+  showIcon?: boolean
+  className?: string
+  href?: string
+  hideNav?: boolean
+  customBrand?: any
+}
+
+export const Nav = ({
   appName,
   icon,
   children,
@@ -11,7 +22,7 @@ export function Nav({
   href,
   hideNav,
   customBrand,
-}) {
+}: Props) => {
   return html`
     <nav class="navbar navbar-expand-lg ${className ?? "bg-light"}">
       <div class="container-fluid">

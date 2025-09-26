@@ -1,26 +1,27 @@
 // Copyright (C) Konrad Gadzinowski
 
 import { NextFunction, Response } from "express"
-import React, { ReactNode } from "react"
 import { CollectionSystem } from "../database/CollectionSystem"
 import { CollectionUser, UserRole, UserStatus } from "../database/CollectionUser"
 import { Form } from "../form/Form"
 import { FlashType, Request } from "../server/Request"
-import { Input } from "../ui/Input"
+import { html } from "../html/Html"
 import { SubmitForm } from "../ui/SubmitForm"
+import { Input } from "../ui/Input"
+import { VNode } from "preact"
 
 export class PageSetup {
-  public static render = async (req: Request, res: Response): Promise<ReactNode> => {
-    return (
-      <div>
-        <SubmitForm title="Create Admin account" submitText="Create Account">
-          <Input type="email" name="email" req={req} required />
-        </SubmitForm>
-      </div>
-    )
+  public static render = async (req: Request, res: Response): Promise<VNode> => {
+    return html`
+    <div>
+      <${SubmitForm} title="Create Admin account" submitText="Create Account">
+        <${Input} type="email" name="email" req=${req} required />
+      <//>
+    </div>
+  `
   }
 
-  public static finishSetup = async (req: Request, res: Response, next: NextFunction): Promise<ReactNode> => {
+  public static finishSetup = async (req: Request, res: Response, next: NextFunction): Promise<VNode> => {
     const { success, form } = await Form.getParams(req, PageSetup.render(req, res))
 
     if (!success) {

@@ -1,8 +1,22 @@
 import { Auth } from "../auth/Auth"
 import { html } from "../html/Html"
 import { InlineIcon } from "./InlineIcon"
+import { UserRole } from "../database/CollectionUser"
+import { Role } from "../Role"
+import { Request } from "../server/Request"
 
-export function Link(props) {
+type Props = {
+  icon?: string
+  req?: Request
+  restrictions?: (Role | UserRole | string)[]
+  href: string
+  children?: any
+  className?: string
+  style?: any
+  [key: string]: any
+}
+
+export const Link = (props: Props) => {
   const { href, children, icon, restrictions, req, ...otherProps } = props
 
   if (restrictions && !req) {

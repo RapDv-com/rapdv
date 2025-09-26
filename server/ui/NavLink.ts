@@ -1,10 +1,24 @@
 // Copyright (C) Konrad Gadzinowski
 
 import { Auth } from "../auth/Auth"
+import { UserRole } from "../database/CollectionUser"
 import { html } from "../html/Html"
+import { Role } from "../Role"
+import { Request } from "../server/Request"
 import { Link } from "./Link"
 
-export function NavLink({
+type Props = {
+  icon?: string
+  req?: Request
+  restrictions?: (Role | UserRole | string)[]
+  noNavLinkStyle?: boolean
+  hidden?: boolean
+  href: string
+  className?: string
+  [key: string]: any
+}
+
+export const NavLink = ({
   req,
   restrictions,
   className = "",
@@ -12,7 +26,7 @@ export function NavLink({
   hidden,
   href,
   ...otherProps
-}) {
+}: Props) => {
   if (hidden) {
     return null
   }

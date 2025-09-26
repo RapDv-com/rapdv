@@ -3,14 +3,23 @@
 import url from "url"
 import { html } from "../html/Html"
 
-export function Paginator({
+type Props = {
+  req: Request
+  center?: boolean
+  itemsCount: number
+  itemsPerPage?: number
+  keyPage?: string
+  hideIfSinglePage?: boolean
+}
+
+export const Paginator = ({
   req,
   center = false,
   itemsCount,
   itemsPerPage = Paginator.ITEMS_PER_PAGE,
   keyPage,
   hideIfSinglePage = false
-}) {
+}: Props) => {
   const KEY_PAGE = keyPage || "page"
   const ITEMS_PER_PAGE = 20
   const PAGE_NMB_TO_REAL_OFFSET = -1

@@ -3,7 +3,16 @@
 import { html } from "../html/Html"
 import { Types } from "../types/Types"
 
-export function InlineIcon({ src, color, size, noMargin, alt, className = "" }) {
+type Props = {
+  src: string | any
+  color?: string
+  size?: string
+  noMargin?: boolean
+  alt?: string
+  className?: string
+}
+
+export const InlineIcon = ({ src, color, size, noMargin, alt, className = "" }: Props) => {
   if (!src) return null
 
   const colorStyle = color ? { color } : {}

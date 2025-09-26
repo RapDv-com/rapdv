@@ -4,7 +4,21 @@ import { html } from "../html/Html"
 import { TextUtils } from "../text/TextUtils"
 import { Types } from "../types/Types"
 
-export function List({ fields, data, hideHeader, className }) {
+export type FieldInfo = {
+  key: string
+  title?: string
+  hide?: boolean
+  custom?: (entry: any, index: number) => any | string
+}
+
+type Props = {
+  fields: FieldInfo[]
+  data: Array<any>
+  hideHeader?: boolean
+  className?: string
+}
+
+export const List = ({ fields, data, hideHeader, className }: Props) => {
   if (!fields || fields.length === 0) return null
 
   const keyToTitle = (key) => {

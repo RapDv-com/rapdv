@@ -2,8 +2,11 @@
 
 import { html } from "../html/Html"
 
+type Props = {
+  req: any
+}
 
-export function FlashMessages({ req }) {
+export const FlashMessages = ({ req }: Props) => {
   const renderMsg = (text) => {
     return typeof text === "string" ? text : JSON.stringify(text)
   }
