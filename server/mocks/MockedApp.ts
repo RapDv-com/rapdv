@@ -39,9 +39,17 @@ export class MockedApp extends RapDvApp {
     this.addRoute("/privacy", ReqType.Get, async () => html`<div>Privacy policy</div>`, "Privacy Policy", "Our privacy policy")
   }
 
-  getHeadTags = async () => ""
-
-  getLayout = async (req: Request, content: VNode | string, appInfo: AppBasicInfo): Promise<VNode> => {
+  getLayout = async (
+    req: Request, 
+    appInfo: AppBasicInfo, 
+    canonicalUrl: string,
+    title: string, 
+    description: string, 
+    content: VNode | string, 
+    disableIndexing: boolean,
+    clientFilesId: string,
+    otherOptions?: any
+  ): Promise<VNode> => {
     const year = new Date().getFullYear()
     return (
       html`

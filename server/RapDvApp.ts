@@ -17,7 +17,6 @@ import { UserRole } from "./database/CollectionUser"
 import { FlashType, Request } from "./server/Request"
 import { Types } from "./types/Types"
 import { HtmlFlash } from "./ui/HtmlFlash"
-import { ServerStyleSheet } from "styled-components"
 import { Mailer } from "./mailer/Mailer"
 import { CollectionImageFile } from "./database/CollectionImageFile"
 import { LogType } from "./database/CollectionLog"
@@ -26,6 +25,7 @@ import bodyParser from "body-parser"
 import { CollectionUserSession } from "./database/CollectionUserSession"
 import { VNode } from "preact"
 import render from "preact-render-to-string"
+import { Git } from "./system/Git"
 
 export type EndpointLogic = (req: Request, res: Response, next: NextFunction, app: RapDvApp, mailer: Mailer) => void
 export type TaskLogic = () => void
@@ -42,8 +42,16 @@ export type AppBasicInfo = {
 export abstract class RapDvApp {
   public abstract getBasicInfo: () => AppBasicInfo
   public abstract getPages: () => Promise<void>
-  public abstract getHeadTags: (req: Request, res: Response) => Promise<string>
-  public abstract getLayout: (req: Request, content: VNode | string, appInfo: AppBasicInfo, otherOptions?: any) => Promise<VNode>
+  public abstract getLayout: (
+    req: Request, 
+    appInfo: AppBasicInfo, 
+    canonicalUrl: string,
+    title: string, 
+    description: string, 
+    content: VNode | string, 
+    disableIndexing: boolean,
+    clientFilesId: string, 
+    otherOptions?: any) => Promise<VNode>
   public abstract initAuth: () => Promise<void>
   public abstract getStorage: () => Promise<void>
   public abstract startRecurringTasks: (mailer: Mailer) => Promise<void>
@@ -58,6 +66,7 @@ export abstract class RapDvApp {
   protected upload: any
   protected publicUrls: Array<{ path: string, priority: number, changefreq: string }> = []
   protected mailer: Mailer
+  private commitNumber: string = Git.getCurrentCommitNumber(null) ?? Date.now().toString()
 
   public static isProduction = () => process.env.NODE_ENV === "production"
 
@@ -149,8 +158,7 @@ export abstract class RapDvApp {
           return
         }
         const appInfo = this.getBasicInfo()
-        const content = await this.getLayout(req, renderedUi, appInfo, otherOptions)
-        this.renderView(req, res, next, content, title, description, disableIndexing)
+        this.renderView(req, res, next, appInfo, renderedUi, title, description, disableIndexing, otherOptions)
       } catch (error) {
         console.error("Error on rendering views. " + error)
       }
@@ -159,13 +167,13 @@ export abstract class RapDvApp {
     public renderView = async (req: Request,
       res: Response,
       next: NextFunction,
-      renderedUi: VNode,
+      appInfo: AppBasicInfo,
+      renderedUi: string | VNode,
       title?: string | SetText,
       description?: string | SetText,
       disableIndexing?: boolean | SetBoolean,
-      customLayout?: string
+      otherOptions?: any
       ) => {
-      const sheet = new ServerStyleSheet()
 
       try {
 
@@ -174,28 +182,41 @@ export abstract class RapDvApp {
         HtmlFlash.normalizeFlash(req, "info")
         HtmlFlash.normalizeFlash(req, "success")
 
-        let contentText = render(renderedUi)
-
-        // Inject CSRF token
-        const content = contentText.replace(/{{_csrf}}/g, res.locals._csrf)
-
         const pageTitle = await this.getMetaText(req, res, title, "---")
         const pageDescription = await this.getMetaText(req, res, description, "")
         const pageDisableIndexing = await this.getMetaBoolean(req, res, disableIndexing, false)
-        const headAdditionalTags = await this.getHeadTags(req, res)
-        const styleTags = sheet.getStyleTags()
 
-        const data: any = { content }
-        if (customLayout) {
-          data.layout = customLayout
+        let clientFilesId = ""
+        if (RapDvApp.isProduction()) {
+          clientFilesId = this.commitNumber ?? Date.now().toString()
+        } else {
+          // Invalidate cache in development mode
+          clientFilesId = Date.now().toString()
         }
-        this.listener.renderPage(req, res, pageTitle, pageDescription, pageDisableIndexing, styleTags, headAdditionalTags, data)
+
+        const path = req.path === "/" ? "" : req.path
+        const canonicalUrl = process.env.BASE_URL + path
+
+        const content = await this.getLayout(
+          req, 
+          appInfo, 
+          canonicalUrl,
+          pageTitle, 
+          pageDescription, 
+          renderedUi, 
+          pageDisableIndexing,
+          clientFilesId,
+          otherOptions
+        )
+
+        let contentText = render(content)
+
+        // Inject CSRF token
+        contentText = contentText.replace(/{{_csrf}}/g, res.locals._csrf)
+        res.send(contentText)
       } catch (error) {
         console.error("Error on rendering views. " + error)
-      } finally {
-        sheet.seal()
       }
-
     }
 
   public addRoute = (

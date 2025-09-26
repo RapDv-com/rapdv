@@ -25,7 +25,6 @@
     "@types/mongoose": "^5.11.97",
     "@types/node": "^17.0.6",
     "@types/sharp": "0.27.2",
-    "@types/styled-components": "^5.1.25",
     "babel-loader": "^8.2.3",
     "bcrypt-nodejs": "^0.0.3",
     "body-parser": "~1.19.1",

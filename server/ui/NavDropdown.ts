@@ -6,15 +6,16 @@ import { InlineIcon } from "./InlineIcon"
 import { UserRole } from "../database/CollectionUser"
 import { Role } from "../Role"
 import { Request } from "../server/Request"
+import { VNode } from "preact"
 
 type Props = {
-  title: string | React.ReactNode
+  title: string | VNode
   icon?: string
   req?: Request
   restrictions?: (Role | UserRole | string)[]
   className?: string
   dropdownClassName?: string
-  children?: React.ReactNode
+  children?: VNode
 }
 
 export const NavDropdown = ({

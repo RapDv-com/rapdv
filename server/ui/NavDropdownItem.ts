@@ -1,12 +1,13 @@
 // Copyright (C) Konrad Gadzinowski
 
+import { VNode } from "preact"
 import { html } from "../html/Html"
 import { InlineIcon } from "./InlineIcon"
 
 type Props = {
   className?: string
   icon?: string
-  children?: React.ReactNode
+  children?: VNode
   href?: string
   [key: string]: any
 }

@@ -11,13 +11,12 @@ import MongoStore from "connect-mongo"
 import passport from "passport"
 import mongoose from "mongoose"
 import { CollectionUserSession } from "../database/CollectionUserSession"
-import { Git } from "../system/Git"
 import { Request } from "./Request"
+import { render } from "preact-render-to-string"
 
 export class ServerListener {
   public express = express()
   isProduction: boolean
-  private commitNumber: string = Git.getCurrentCommitNumber(null) ?? Date.now().toString()
 
   constructor(isProduction: boolean) {
     this.isProduction = isProduction
@@ -63,33 +62,8 @@ export class ServerListener {
   }
 
   renderView = (res, content?: any) => {
-    res.render(viewName, { layout: null, content })
-  }
-
-  renderPage = (req, res, title: string, description: string, disableIndexing: boolean, styleTags: any, headAdditionalTags: any, data?: any) => {
-
-    let clientFilesId = ""
-    if (this.isProduction) {
-      clientFilesId = this.commitNumber ?? Date.now().toString()
-    } else {
-      // Invalidate cache in development mode
-      clientFilesId = Date.now().toString()
-    }
-
-    const path = req.path === "/" ? "" : req.path
-
-    res.render(viewName, {
-      title,
-      description,
-      layout: "layout",
-      theme: process.env.APP_THEME,
-      disableIndexing,
-      isProduction: this.isProduction,
-      styleTags,
-      clientFilesId,
-      headAdditionalTags,
-      canonicalUrl: process.env.BASE_URL + path,
-      ...data
-    })
+    let contentText = render(content)
+    contentText = contentText.replace(/{{_csrf}}/g, res.locals._csrf)
+    res.send(contentText)
   }
 }
