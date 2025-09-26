@@ -164,7 +164,8 @@ export abstract class RapDvApp {
       }
     }
 
-    public renderView = async (req: Request,
+    public renderView = async (
+      req: Request,
       res: Response,
       next: NextFunction,
       appInfo: AppBasicInfo,
@@ -213,6 +214,7 @@ export abstract class RapDvApp {
 
         // Inject CSRF token
         contentText = contentText.replace(/{{_csrf}}/g, res.locals._csrf)
+        
         res.send(contentText)
       } catch (error) {
         console.error("Error on rendering views. " + error)

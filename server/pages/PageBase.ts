@@ -25,6 +25,7 @@ export class PageBase {
 
       // Render the error page
       res.status(error.status || 500)
+      // TODO: Render error!
       res.render("error")
     })
   }
