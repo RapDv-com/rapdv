@@ -1,12 +1,16 @@
 // Copyright (C) Konrad Gadzinowski
 
-import * as path from "path"
+import { VNode } from "preact"
+import { render } from "preact-render-to-string"
+import { RapDvApp } from "../RapDvApp"
 
 export class PageBase {
   private router: any
+  private getErrorView: (error: any) => Promise<VNode>
 
-  public constructor(router: any) {
+  public constructor(router: any, getErrorView: (error: any) => Promise<VNode>) {
     this.router = router
+    this.getErrorView = getErrorView
   }
 
   public setup = () => {
@@ -18,15 +22,17 @@ export class PageBase {
       next(error)
     })
 
-    this.router.use((error, req, res, next) => {
+    this.router.use(async (error, req, res, next) => {
       // Set locals, only providing error in development
       res.locals.message = error.message
-      res.locals.error = req.app.get("env") === "development" ? error : {}
+      res.locals.error = RapDvApp.isProduction() ? {} : error
 
       // Render the error page
+      const errorView = await this.getErrorView(error)
+      const contentText = render(errorView)
+      
       res.status(error.status || 500)
-      // TODO: Render error!
-      res.render("error")
+      res.send(contentText)
     })
   }
 }

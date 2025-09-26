@@ -133,7 +133,7 @@ export class Server {
     await app.getPages()
     pageMetadata.setPublicUrls(app.getPublicUrls())
 
-    const pageBase = new PageBase(appExpress)
+    const pageBase = new PageBase(appExpress, app.getErrorView)
     pageBase.setup()
 
     // Set new app object
