@@ -12,8 +12,8 @@ export const DivHtml = ({ children, className }: Props) => {
   return html`
     <div
       class=${className}
+      dangerouslySetInnerHTML=${HtmlUtils.sanitizeForInjectionTags(children)}
     >
-      ${HtmlUtils.sanitizeForInjectionTags(children)}\
     </div>
   `;
 };

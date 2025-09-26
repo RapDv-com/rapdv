@@ -58,6 +58,7 @@ export class ServerListener {
     });
 
     this.express.use("/client", express.static("./client"))
+    this.express.use("/rapdv", express.static("./submodules/rapdv/client"))
     this.express.use("/dist", express.static("./dist"))
   }
 
