@@ -6,7 +6,7 @@ export class CloudflareTurnstileClient {
   static init(theme = "light") {
     CloudflareTurnstileClient.theme = theme;
     
-    if (!process.env.CLOUDFLARE_TURNSLIDE_KEY_CLIENT || process.env.CLOUDFLARE_TURNSLIDE_KEY_CLIENT?.trim().length === 0) {
+    if (!CLOUDFLARE_TURNSLIDE_KEY_CLIENT || CLOUDFLARE_TURNSLIDE_KEY_CLIENT?.trim().length === 0) {
       return
     }
     
@@ -17,7 +17,7 @@ export class CloudflareTurnstileClient {
 
   static initCloudflareTurnslide() {
     turnstile.render("#cloudFlareTurnslide", {
-      sitekey: process.env.CLOUDFLARE_TURNSLIDE_KEY_CLIENT,
+      sitekey: CLOUDFLARE_TURNSLIDE_KEY_CLIENT,
       theme: CloudflareTurnstileClient.theme,
       callback: (token) => {
         // Challenge completed successfuly

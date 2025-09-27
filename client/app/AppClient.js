@@ -1,12 +1,7 @@
 // Copyright (C) Konrad Gadzinowski
 
-import Pjax from "pjax"
-import "nprogress/nprogress.css"
-import NProgress from "nprogress/nprogress.js"
-import { PagesCtrl } from "../elements/PagesCtrl"
-import "./styles/main.scss"
-import "./styles/sizing.scss"
-import Pjax from "pjax"
+
+import { PagesCtrl } from "rapdv/elements/PagesCtrl"
 
 export class AppClient {
   initiated = false
