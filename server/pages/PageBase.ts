@@ -27,7 +27,8 @@ export class PageBase {
 
       // Render the error page
       const errorView = await this.app.getErrorView(error)
-      const contentText = this.app.renderView(
+      res.status(error.status || 500)
+      this.app.renderView(
           req,
           res,
           next,
@@ -37,8 +38,6 @@ export class PageBase {
           true
         )
       
-      res.status(error.status || 500)
-      res.send(contentText)
     })
   }
 }
