@@ -204,7 +204,7 @@ export abstract class RapDvApp {
       const path = req.path === "/" ? "" : req.path
       const canonicalUrl = process.env.BASE_URL + path
 
-      const contentWithouCss = sheet.collectStyles(renderedUi)
+      const contentWithoutCss = sheet.collectStyles(renderedUi)
       const styleTags = sheet.getStyleTags()
 
       const content = await this.getLayout(
@@ -212,13 +212,14 @@ export abstract class RapDvApp {
         canonicalUrl,
         pageTitle,
         pageDescription,
-        renderedUi,
+        contentWithoutCss,
         styleTags,
         pageDisableIndexing,
         clientFilesId,
         otherOptions
       )
-      let contentText = ReactDOMServer.renderToStaticMarkup(contentWithouCss)
+      
+      let contentText = "<!DOCTYPE html>" + ReactDOMServer.renderToStaticMarkup(content)
 
       // Inject CSRF token
       contentText = contentText.replace(/{{_csrf}}/g, res.locals._csrf)
