@@ -1,10 +1,15 @@
 // Copyright (C) Konrad Gadzinowski
 
+import React, { ReactNode } from "react"
+import { RapDvApp } from "../RapDvApp"
+
 export class PageBase {
   private router: any
+  private getErrorView: (error: any) => Promise<ReactNode>
 
-  public constructor(router: any) {
+  public constructor(router: any, getErrorView: (error: any) => Promise<ReactNode>) {
     this.router = router
+    this.getErrorView = getErrorView
   }
 
   public setup = () => {
@@ -15,14 +20,17 @@ export class PageBase {
       next(error)
     })
 
-    this.router.use((error, req, res, next) => {
-      // set locals, only providing error in development
+    this.router.use(async (error, req, res, next) => {
+      // Set locals, only providing error in development
       res.locals.message = error.message
-      res.locals.error = req.app.get("env") === "development" ? error : {}
+      res.locals.error = RapDvApp.isProduction() ? {} : error
 
-      // render the error page
+      // Render the error page
+      const errorView = await this.getErrorView(error)
+      const contentText = render(errorView)
+      
       res.status(error.status || 500)
-      res.render("error")
+      res.send(contentText)
     })
   }
 }

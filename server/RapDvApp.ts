@@ -41,8 +41,18 @@ export type AppBasicInfo = {
 export abstract class RapDvApp {
   public abstract getBasicInfo: () => AppBasicInfo
   public abstract getPages: () => Promise<void>
-  public abstract getHeadTags: (req: Request, res: Response) => Promise<string>
-  public abstract getLayout: (req: Request, content: ReactNode, appInfo: AppBasicInfo) => Promise<ReactNode>
+  public abstract getLayout: (
+    req: Request, 
+    appInfo: AppBasicInfo, 
+    canonicalUrl: string,
+    title: string, 
+    description: string, 
+    content: ReactNode | string, 
+    disableIndexing: boolean,
+    clientFilesId: string, 
+    otherOptions?: any
+  ) => Promise<ReactNode>
+  public abstract getErrorView: (error: any) => Promise<ReactNode>
   public abstract initAuth: () => Promise<void>
   public abstract getStorage: () => Promise<void>
   public abstract startRecurringTasks: (mailer: Mailer) => Promise<void>
@@ -178,16 +188,15 @@ export abstract class RapDvApp {
         const pageTitle = await this.getMetaText(req, res, title, "---")
         const pageDescription = await this.getMetaText(req, res, description, "")
         const pageDisableIndexing = await this.getMetaBoolean(req, res, disableIndexing, false)
-        const headAdditionalTagsData = await this.getHeadTags(req, res)
-        const headAdditionalTags = new hbs.SafeString(headAdditionalTagsData)
+        const styleTags = sheet.getStyleTags()
+
         const content = new hbs.SafeString(contentText)
-        const styleTags = new hbs.SafeString(sheet.getStyleTags())
 
         const data: any = { content }
         if (customLayout) {
           data.layout = customLayout
         }
-        this.listener.renderPage(req, res, "page", pageTitle, pageDescription, pageDisableIndexing, styleTags, headAdditionalTags, data)
+        this.listener.renderPage(req, res, pageTitle, pageDescription, pageDisableIndexing, styleTags, headAdditionalTags, data)
       } catch (error) {
         console.error("Error on rendering views. " + error)
       } finally {
@@ -231,7 +240,7 @@ export abstract class RapDvApp {
     enableFilesUpload?: boolean
   ) => {
     const renderedUi = await content
-    const logic = async (req: Request, res: Response) => this.listener.renderView(res, "page", renderedUi)
+    const logic = async (req: Request, res: Response) => this.listener.renderView(res, renderedUi)
     this.addGenericRoute(path, reqType, logic, restrictions, enableFilesUpload)
   }
 

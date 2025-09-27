@@ -10,8 +10,11 @@ import flash from "express-flash"
 import MongoStore from "connect-mongo"
 import passport from "passport"
 import mongoose from "mongoose"
+import ReactDOMServer from "react-dom/server"
 import { CollectionUserSession } from "../database/CollectionUserSession"
 import { Git } from "../system/Git"
+import { ReactNode } from "react"
+import { ServerStyleSheet } from "styled-components"
 
 export class ServerListener {
   public express = express()
@@ -52,11 +55,17 @@ export class ServerListener {
     this.express.use("/dist", express.static("./dist"))
   }
 
-  renderView = (res, viewName: string, content?: any) => {
-    res.render(viewName, { layout: null, content })
+  renderView = (res, content?: ReactNode) => {
+    try {
+      let contentText = ReactDOMServer.renderToStaticMarkup(content)
+      contentText = contentText.replace(/{{_csrf}}/g, res.locals._csrf)
+      res.send(content)
+    } catch (error) {
+      console.error("Error on rendering views. " + error)
+    }
   }
 
-  renderPage = (req, res, viewName: string, title: string, description: string, disableIndexing: boolean, styleTags: any, headAdditionalTags: any, data?: any) => {
+  renderPage = (req, res, title: string, description: string, disableIndexing: boolean, styleTags: any, headAdditionalTags: any, data?: any) => {
 
     let clientFilesId = ""
     if (this.isProduction) {
