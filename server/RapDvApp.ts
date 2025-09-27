@@ -268,7 +268,7 @@ export abstract class RapDvApp {
     enableFilesUpload?: boolean
   ) => {
     const renderedUi = await content
-    const logic = async (req: Request, res: Response) => this.listener.renderView(res, renderedUi)
+    const logic = async (req: Request, res: Response) => this.listener.renderHtmlView(res, renderedUi)
     this.addGenericRoute(path, reqType, logic, restrictions, enableFilesUpload)
   }
 

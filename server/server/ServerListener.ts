@@ -52,9 +52,9 @@ export class ServerListener {
     this.express.use("/dist", express.static("./dist"))
   }
 
-  renderView = (res, content?: ReactNode) => {
+  renderHtmlView = (res, content?: ReactNode) => {
     try {
-      let contentText = ReactDOMServer.renderToStaticMarkup(content)
+      let contentText = "<!DOCTYPE html>" + ReactDOMServer.renderToStaticMarkup(content)
       contentText = contentText.replace(/{{_csrf}}/g, res.locals._csrf)
       res.send(content)
     } catch (error) {
