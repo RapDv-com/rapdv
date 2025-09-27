@@ -1,23 +1,13 @@
 // Copyright (C) Konrad Gadzinowski
 
-import * as path from "path"
-
-export interface IPageBase {
-  addViewPath(viewsPath: string)
-}
-
 export class PageBase {
   private router: any
-  private listener: IPageBase
 
-  public constructor(router: any, listener: IPageBase) {
+  public constructor(router: any) {
     this.router = router
-    this.listener = listener
   }
 
   public setup = () => {
-    this.listener.addViewPath(path.join(__dirname, path.sep + "views"))
-
     // Handle errors
     this.router.use((req, res, next) => {
       const error: any = new Error("Not Found")

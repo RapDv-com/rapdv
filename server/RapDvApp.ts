@@ -5,7 +5,6 @@
 import { Express, NextFunction } from "express"
 import { ReqType } from "./ReqType"
 import { ServerListener } from "./server/ServerListener"
-import hbs from "hbs"
 import lusca from "lusca"
 import ReactDOMServer from "react-dom/server"
 import { Upload } from "./upload/Upload"

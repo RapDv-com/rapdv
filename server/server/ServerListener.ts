@@ -4,7 +4,6 @@ import express from "express"
 import logger from "morgan"
 import cookieParser from "cookie-parser"
 import bodyParser from "body-parser"
-import hbs from "hbs"
 import lusca from "lusca"
 import session from "express-session"
 import flash from "express-flash"
@@ -38,8 +37,6 @@ export class ServerListener {
     }
 
     // view engine setup
-    this.express.set("view engine", "hbs")
-
     this.express.use(logger("dev"))
     this.express.use(bodyParser.urlencoded({ extended: true }))
     this.express.use(cookieParser())
@@ -53,15 +50,6 @@ export class ServerListener {
 
     this.express.use("/client", express.static("./client"))
     this.express.use("/dist", express.static("./dist"))
-
-    // Import scripts and styles
-    this.addViewPath("./server/imports")
-  }
-
-  public addViewPath(viewsPath: string) {
-    this.expressViews.push(viewsPath)
-    this.express.set("views", this.expressViews)
-    hbs.registerPartials(viewsPath)
   }
 
   renderView = (res, viewName: string, content?: any) => {
