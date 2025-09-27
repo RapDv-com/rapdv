@@ -8,6 +8,7 @@ import { HydratedDocument } from "mongoose"
 import { Collection } from "../database/Collection"
 import { Network } from "../network/Network"
 import spacetime from "spacetime"
+import { isArray } from "util"
 
 const DEBUG = false
 
@@ -61,7 +62,15 @@ export class Form {
   }
 
   public static getParams = async (req: Request, elementsPromise: Promise<any>, formName?: string): Promise<FormParams> => {
-    const elements: any = await elementsPromise
+    let elements: any = await elementsPromise
+    if (Array.isArray(elements)) {
+      elements = {
+        props: {
+          children: elements
+        }
+      }
+    }
+
     let errors: string[] = []
 
     const analyzeChildren = async (element: any, initForm: FormData | null = null): Promise<FormData | null> => {

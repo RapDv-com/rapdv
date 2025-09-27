@@ -1,7 +1,7 @@
 // Copyright (C) Konrad Gadzinowski
 
-
 import { PagesCtrl } from "rapdv/elements/PagesCtrl"
+import { Form } from "rapdv/elements/Form"
 
 export class AppClient {
   initiated = false
