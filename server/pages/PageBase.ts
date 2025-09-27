@@ -5,11 +5,11 @@ import { RapDvApp } from "../RapDvApp"
 
 export class PageBase {
   private router: any
-  private getErrorView: (error: any) => Promise<ReactNode>
+  private app: RapDvApp
 
-  public constructor(router: any, getErrorView: (error: any) => Promise<ReactNode>) {
+  public constructor(router: any, app: RapDvApp) {
     this.router = router
-    this.getErrorView = getErrorView
+    this.app = app
   }
 
   public setup = () => {
@@ -26,8 +26,16 @@ export class PageBase {
       res.locals.error = RapDvApp.isProduction() ? {} : error
 
       // Render the error page
-      const errorView = await this.getErrorView(error)
-      const contentText = render(errorView)
+      const errorView = await this.app.getErrorView(error)
+      const contentText = this.app.renderView(
+          req,
+          res,
+          next,
+          errorView.content,
+          errorView.title,
+          errorView.description,
+          true
+        )
       
       res.status(error.status || 500)
       res.send(contentText)

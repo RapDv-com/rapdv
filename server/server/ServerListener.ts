@@ -12,15 +12,12 @@ import passport from "passport"
 import mongoose from "mongoose"
 import ReactDOMServer from "react-dom/server"
 import { CollectionUserSession } from "../database/CollectionUserSession"
-import { Git } from "../system/Git"
 import { ReactNode } from "react"
-import { ServerStyleSheet } from "styled-components"
 
 export class ServerListener {
   public express = express()
   expressViews: Array<string> = new Array()
   isProduction: boolean
-  private commitNumber: string = Git.getCurrentCommitNumber(null) ?? Date.now().toString()
 
   constructor(isProduction: boolean) {
     this.isProduction = isProduction
@@ -63,31 +60,5 @@ export class ServerListener {
     } catch (error) {
       console.error("Error on rendering views. " + error)
     }
-  }
-
-  renderPage = (req, res, title: string, description: string, disableIndexing: boolean, styleTags: any, headAdditionalTags: any, data?: any) => {
-
-    let clientFilesId = ""
-    if (this.isProduction) {
-      clientFilesId = this.commitNumber ?? Date.now().toString()
-    } else {
-      // Invalidate cache in development mode
-      clientFilesId = Date.now().toString()
-    }
-
-    const path = req.path === "/" ? "" : req.path
-
-    res.render(viewName, {
-      title,
-      description,
-      layout: "layout",
-      disableIndexing,
-      isProduction: this.isProduction,
-      styleTags,
-      clientFilesId,
-      headAdditionalTags,
-      canonicalUrl: process.env.BASE_URL + path,
-      ...data
-    })
   }
 }

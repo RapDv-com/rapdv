@@ -25,6 +25,7 @@ import { CollectionImageFile } from "./database/CollectionImageFile"
 import { LogType } from "./database/CollectionLog"
 import express from "express"
 import bodyParser from "body-parser"
+import { Git } from "./system/Git"
 
 export type EndpointLogic = (req: Request, res: Response, next: NextFunction, app: RapDvApp, mailer: Mailer) => void
 export type TaskLogic = () => void
@@ -42,17 +43,21 @@ export abstract class RapDvApp {
   public abstract getBasicInfo: () => AppBasicInfo
   public abstract getPages: () => Promise<void>
   public abstract getLayout: (
-    req: Request, 
-    appInfo: AppBasicInfo, 
+    req: Request,
     canonicalUrl: string,
-    title: string, 
-    description: string, 
-    content: ReactNode | string, 
+    title: string,
+    description: string,
+    content: ReactNode | string,
+    styleTags: ReactNode,
     disableIndexing: boolean,
-    clientFilesId: string, 
+    clientFilesId: string,
     otherOptions?: any
   ) => Promise<ReactNode>
-  public abstract getErrorView: (error: any) => Promise<ReactNode>
+  public abstract getErrorView: (error: any) => Promise<{
+    title: string,
+    description: string,
+    content: ReactNode
+  }>
   public abstract initAuth: () => Promise<void>
   public abstract getStorage: () => Promise<void>
   public abstract startRecurringTasks: (mailer: Mailer) => Promise<void>
@@ -66,6 +71,8 @@ export abstract class RapDvApp {
   protected upload: any
   protected publicUrls: Array<{ path: string, priority: number, changefreq: string }> = []
   protected mailer: Mailer
+
+  private commitNumber: string = Git.getCurrentCommitNumber(null) ?? Date.now().toString()
 
   public static isProduction = () => process.env.NODE_ENV === "production"
 
@@ -145,65 +152,84 @@ export abstract class RapDvApp {
       ui: (req: Request, res: Response, next: NextFunction, app: RapDvApp, mailer: Mailer) => Promise<ReactNode | string>,
       title?: string | SetText,
       description?: string | SetText,
-      disableIndexing?: boolean | SetBoolean
-    ) =>
-    async (req: Request, res: Response, next: NextFunction) => {
-      try {
-        const renderedUi = await ui(req, res, next, this, this.mailer)
-        if (renderedUi === undefined || renderedUi === null) {
-          // The request was handled differently
-          return
-        }
-        const appInfo = this.getBasicInfo()
-        const content = await this.getLayout(req, renderedUi, appInfo)
-        this.renderView(req, res, next, content, title, description, disableIndexing)
-      } catch (error) {
-        console.error("Error on rendering views. " + error)
-      }
-    }
-
-    public renderView = async (req: Request,
-      res: Response,
-      next: NextFunction,
-      renderedUi: ReactNode,
-      title?: string | SetText,
-      description?: string | SetText,
       disableIndexing?: boolean | SetBoolean,
-      customLayout?: string
-      ) => {
-      const sheet = new ServerStyleSheet()
+      otherOptions?: any
+    ) =>
+      async (req: Request, res: Response, next: NextFunction) => {
+        try {
+          const renderedUi = await ui(req, res, next, this, this.mailer)
+          if (renderedUi === undefined || renderedUi === null) {
+            // The request was handled differently
+            return
+          }
 
-      try {
-
-        HtmlFlash.normalizeFlash(req, "errors")
-        HtmlFlash.normalizeFlash(req, "warning")
-        HtmlFlash.normalizeFlash(req, "info")
-        HtmlFlash.normalizeFlash(req, "success")
-
-        let contentText = ReactDOMServer.renderToStaticMarkup(sheet.collectStyles(renderedUi))
-
-        // Inject CSRF token
-        contentText = contentText.replace(/{{_csrf}}/g, res.locals._csrf)
-
-        const pageTitle = await this.getMetaText(req, res, title, "---")
-        const pageDescription = await this.getMetaText(req, res, description, "")
-        const pageDisableIndexing = await this.getMetaBoolean(req, res, disableIndexing, false)
-        const styleTags = sheet.getStyleTags()
-
-        const content = new hbs.SafeString(contentText)
-
-        const data: any = { content }
-        if (customLayout) {
-          data.layout = customLayout
+          const appInfo = this.getBasicInfo()
+          this.renderView(req, res, next, renderedUi, title, description, disableIndexing, otherOptions)
+        } catch (error) {
+          console.error("Error on rendering views. " + error)
         }
-        this.listener.renderPage(req, res, pageTitle, pageDescription, pageDisableIndexing, styleTags, headAdditionalTags, data)
-      } catch (error) {
-        console.error("Error on rendering views. " + error)
-      } finally {
-        sheet.seal()
       }
 
+  public renderView = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+    renderedUi: ReactNode | string,
+    title?: string | SetText,
+    description?: string | SetText,
+    disableIndexing?: boolean | SetBoolean,
+    otherOptions?: any
+  ) => {
+    const sheet = new ServerStyleSheet()
+
+    try {
+
+      HtmlFlash.normalizeFlash(req, "errors")
+      HtmlFlash.normalizeFlash(req, "warning")
+      HtmlFlash.normalizeFlash(req, "info")
+      HtmlFlash.normalizeFlash(req, "success")
+
+      const pageTitle = await this.getMetaText(req, res, title, "---")
+      const pageDescription = await this.getMetaText(req, res, description, "")
+      const pageDisableIndexing = await this.getMetaBoolean(req, res, disableIndexing, false)
+
+      let clientFilesId = ""
+      if (RapDvApp.isProduction()) {
+        clientFilesId = this.commitNumber ?? Date.now().toString()
+      } else {
+        // Invalidate cache in development mode
+        clientFilesId = Date.now().toString()
+      }
+
+      const path = req.path === "/" ? "" : req.path
+      const canonicalUrl = process.env.BASE_URL + path
+
+      const contentWithouCss = sheet.collectStyles(renderedUi)
+      const styleTags = sheet.getStyleTags()
+
+      const content = await this.getLayout(
+        req,
+        canonicalUrl,
+        pageTitle,
+        pageDescription,
+        renderedUi,
+        styleTags,
+        pageDisableIndexing,
+        clientFilesId,
+        otherOptions
+      )
+      let contentText = ReactDOMServer.renderToStaticMarkup(contentWithouCss)
+
+      // Inject CSRF token
+      contentText = contentText.replace(/{{_csrf}}/g, res.locals._csrf)
+
+      res.send(contentText)
+    } catch (error) {
+      console.error("Error on rendering views. " + error)
+    } finally {
+      sheet.seal()
     }
+  }
 
   public addRoute = (
     path: string | { path: string, priority: number, changefreq: string },
@@ -213,7 +239,8 @@ export abstract class RapDvApp {
     description?: string | SetText,
     restrictions?: (Role | UserRole | string)[],
     disableIndexing?: boolean | SetBoolean,
-    enableFilesUpload?: boolean
+    enableFilesUpload?: boolean,
+    otherOptions?: any
   ) => {
     if (!this.publicUrls) this.publicUrls = []
     const noRestructions = !restrictions || restrictions.length === 0
@@ -229,7 +256,7 @@ export abstract class RapDvApp {
       }
     }
 
-    this.addGenericRoute(urlPath, reqType, this.renderViews(content, title, description, disableIndexing), restrictions, enableFilesUpload)
+    this.addGenericRoute(urlPath, reqType, this.renderViews(content, title, description, disableIndexing, otherOptions), restrictions, enableFilesUpload)
   }
 
   public addSimpleRoute = async (
@@ -327,21 +354,21 @@ export abstract class RapDvApp {
 
     if (reqType === ReqType.Get) {
       this.router.get(path,
-        express.raw({type: 'application/json'}),
+        express.raw({ type: 'application/json' }),
         executeLogic
       )
     } else if (reqType === ReqType.Post) {
       this.router.post(
         path,
-        express.raw({type: 'application/json'}),
+        express.raw({ type: 'application/json' }),
         executeLogic
       )
     } else if (reqType === ReqType.Put) {
-      this.router.put(path, express.raw({type: 'application/json'}), executeLogic)
+      this.router.put(path, express.raw({ type: 'application/json' }), executeLogic)
     } else if (reqType === ReqType.Patch) {
-      this.router.patch(path, express.raw({type: 'application/json'}), executeLogic)
+      this.router.patch(path, express.raw({ type: 'application/json' }), executeLogic)
     } else if (reqType === ReqType.Delete) {
-      this.router.delete(path, express.raw({type: 'application/json'}), executeLogic)
+      this.router.delete(path, express.raw({ type: 'application/json' }), executeLogic)
     }
   }
 
