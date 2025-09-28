@@ -12,12 +12,8 @@ import passport from "passport"
 import mongoose from "mongoose"
 import ReactDOMServer from "react-dom/server"
 import { CollectionUserSession } from "../database/CollectionUserSession"
-<<<<<<< HEAD
 import { ReactNode } from "react"
-=======
-import { Git } from "../system/Git"
 import { Request } from "./Request"
->>>>>>> origin/main
 
 export class ServerListener {
   public express = express()
@@ -76,24 +72,5 @@ export class ServerListener {
     } catch (error) {
       console.error("Error on rendering views. " + error)
     }
-<<<<<<< HEAD
-=======
-
-    const path = req.path === "/" ? "" : req.path
-
-    res.render(viewName, {
-      title,
-      description,
-      layout: "layout",
-      theme: process.env.APP_THEME,
-      disableIndexing,
-      isProduction: this.isProduction,
-      styleTags,
-      clientFilesId,
-      headAdditionalTags,
-      canonicalUrl: process.env.BASE_URL + path,
-      ...data
-    })
->>>>>>> origin/main
   }
 }
