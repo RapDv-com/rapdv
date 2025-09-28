@@ -49,7 +49,6 @@ export abstract class RapDvApp {
     title: string,
     description: string,
     content: ReactNode | string,
-    styleTags: ReactNode,
     disableIndexing: boolean,
     clientFilesId: string,
     otherOptions?: any
@@ -207,24 +206,22 @@ export abstract class RapDvApp {
       const path = req.path === "/" ? "" : req.path
       const canonicalUrl = process.env.BASE_URL + path
 
-      ReactDOMServer.renderToString(
-        sheet.collectStyles(renderedUi)
-      )
-      const styleTags = sheet.getStyleElement()
-
       const content = await this.getLayout(
         req,
         canonicalUrl,
         pageTitle,
         pageDescription,
         renderedUi,
-        styleTags,
         pageDisableIndexing,
         clientFilesId,
         otherOptions
       )
 
-      let contentText = "<!DOCTYPE html>" + ReactDOMServer.renderToStaticMarkup(content)
+      let contentText = "<!DOCTYPE html>" + ReactDOMServer.renderToStaticMarkup(sheet.collectStyles(content))
+      const styleTags = sheet.getStyleTags()
+
+      // Replace <!-- REACT_STYLES --> with styleTags
+      contentText = contentText.replace("&lt;!-- REACT_STYLES --&gt;", styleTags)
 
       // Inject CSRF token
       contentText = contentText.replace(/{{_csrf}}/g, res.locals._csrf)
