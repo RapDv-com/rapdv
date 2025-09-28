@@ -1,6 +1,6 @@
 {
   "name": "rapdv",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "RapDv - Build web applications quickly",
   "main": "server/RapDvApp.ts",
   "private": false,

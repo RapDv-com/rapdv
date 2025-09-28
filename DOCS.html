@@ -19,7 +19,7 @@
 <!-- MAIN CONTENT -->
 
 <h1>RapDv Documentation</h1>
-<h2 class="mb-5">v1.0.2</h2>
+<h2 class="mb-5">v1.0.3</h2>
 
 <h2 id="QuickStart">Quick Start</h2>
 To start quickly, you can use an example <a href="https://github.com/RapDv-com/rapdv-cms" target="_blank">blog app</a>.
@@ -63,6 +63,11 @@ To start quickly, you can use an example <a href="https://github.com/RapDv-com/r
     <li>Add recurring tasks, if any in <code>startRecurringTasks</code></li>
     <li>If needed, add database evolutions in <code>addDatabaseEvolutions</code></li>
   </ol>
+</p>
+
+<p>
+  Base views are in <code>/server/pages/base</code>.<br/>
+  You can edit there main layout view and a default error view.
 </p>
 
 <h4 id="Authentication" class="mt-3">Authentication</h4>
@@ -165,5 +170,3 @@ To start quickly, you can use an example <a href="https://github.com/RapDv-com/r
     <code>pm2 start 'cd /var/www/rapdv-app; npm run start-prod' --name "rapdv-app"</code>
   </li>
 </ul>
-
-
