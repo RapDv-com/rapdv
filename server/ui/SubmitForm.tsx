@@ -39,7 +39,7 @@ export class SubmitForm extends React.Component<Props & React.FormHTMLAttributes
         <form {...otherProps} method={method ?? ReqType.Post} className={`needs-validation${pjaxClass}`} encType={encType} noValidate>
           {!noCsrf && <input type="hidden" name="_csrf" value="{{_csrf}}" />}
           {children}
-          {!hideSubmitButton && !showActionInFixedPanel && <div className="mb-3">
+          {!hideSubmitButton && !showActionInFixedPanel && <div>
             {submitButton}
           </div>}
           {!hideSubmitButton && showActionInFixedPanel && <FixedPanel>

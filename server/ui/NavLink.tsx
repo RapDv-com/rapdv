@@ -12,11 +12,16 @@ type Props = {
   req?: Request
   restrictions?: (Role | UserRole | string)[]
   noNavLinkStyle?: boolean
+  hidden?: boolean
 }
 
 export class NavLink extends React.Component<Props & React.AnchorHTMLAttributes<HTMLAnchorElement>> {
   render(): ReactNode | string {
-    const { req, restrictions, className, noNavLinkStyle, ...otherProps } = this.props
+    const { req, restrictions, className, noNavLinkStyle, hidden, ...otherProps } = this.props
+
+    if (hidden) {
+      return null
+    }
 
     if (!!restrictions && !req) throw 'When setting restrictions to the NavLink, you also need to pass req'
 

@@ -12,7 +12,7 @@ import { ReactNode } from "react"
 import { Database } from "./database/Database"
 import { Collection } from "./database/Collection"
 import { Response } from "express"
-import { IndexDefinition, SchemaDefinition } from "mongoose"
+import { IndexDefinition, Schema, SchemaDefinition } from "mongoose"
 import { Auth } from "./auth/Auth"
 import { Role } from "./Role"
 import { UserRole } from "./database/CollectionUser"
@@ -26,6 +26,7 @@ import { LogType } from "./database/CollectionLog"
 import express from "express"
 import bodyParser from "body-parser"
 import { Git } from "./system/Git"
+import { CollectionUserSession } from "./database/CollectionUserSession"
 
 export type EndpointLogic = (req: Request, res: Response, next: NextFunction, app: RapDvApp, mailer: Mailer) => void
 export type TaskLogic = () => void
@@ -61,6 +62,7 @@ export abstract class RapDvApp {
   public abstract initAuth: () => Promise<void>
   public abstract getStorage: () => Promise<void>
   public abstract startRecurringTasks: (mailer: Mailer) => Promise<void>
+  public abstract addDatabaseEvolutions: () => Promise<void>
 
   protected MAX_FILES = 5
   protected MAX_FILE_SIZE_KB = 5120
@@ -124,6 +126,7 @@ export abstract class RapDvApp {
 
   public startAllRecurringTasks = () => {
     CollectionImageFile.startJobForRemovingAllUnusedImages()
+    CollectionUserSession.startJobForRemovingAllExpiredSessions()
     this.startRecurringTasks(this.mailer)
   }
 
@@ -218,7 +221,7 @@ export abstract class RapDvApp {
         clientFilesId,
         otherOptions
       )
-      
+
       let contentText = "<!DOCTYPE html>" + ReactDOMServer.renderToStaticMarkup(content)
 
       // Inject CSRF token
@@ -249,7 +252,7 @@ export abstract class RapDvApp {
     const urlHasParameters = !!["*", "+", ":", ";", "?", "{", "}", "[", "]", "{", "}", "$", "\\"].find((character) => urlPath.includes(character))
 
     const isPublicUrlAdded: boolean = !!this.publicUrls.find((publicUrl) => publicUrl.path === urlPath)
-    if (!isPublicUrlAdded && noRestructions && !urlHasParameters) {
+    if (!isPublicUrlAdded && noRestructions && !urlHasParameters && !disableIndexing) {
       if (Types.isString(path)) {
         this.publicUrls.push({ path: path as string, priority: 0.5, changefreq: "weekly" })
       } else {
@@ -377,8 +380,8 @@ export abstract class RapDvApp {
     next()
   }
 
-  public addCollection = (name: string, schema: SchemaDefinition, index?: IndexDefinition): Collection => {
-    return new Collection(name, schema, index)
+  public addCollection = (name: string, schema: SchemaDefinition, indexes?: IndexDefinition[], modifySchema?: (schema: Schema) => Schema): Collection => {
+    return new Collection(name, schema, indexes, modifySchema)
   }
 
   public addDbEvolution = (
@@ -414,6 +417,8 @@ export abstract class RapDvApp {
   }
 
   public setRoles = (): string[] => []
+
+  public setCustomUserProps = (): any => ({})
 
   public createDatabase = () => new Database()
 

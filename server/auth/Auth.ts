@@ -115,7 +115,7 @@ export class Auth {
 
         if (user.isBanned()) {
           await self.logout(req)
-          return reject("Unfortunately, after closely reviewing your account we decided that you are not the best fit for us.")
+          return reject("Your account was deactivated. Please contact support for more information.")
         }
 
         if (error) {

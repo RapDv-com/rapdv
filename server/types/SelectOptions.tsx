@@ -1,5 +1,6 @@
 // Copyright (C) Konrad Gadzinowski
 
+import { TextUtils } from "../text/TextUtils"
 import { Option } from "../ui/Select"
 import { CountriesList } from "./CountriesList"
 import { Currency } from "./Currency"
@@ -18,17 +19,44 @@ export class SelectOptions {
     }))
   ]
 
-  public static getCountries = (): Option[] => {
-    const countries = CountriesList.getCountriesAsJson()
+  public static getCountries = (supporedCountryCodes?: string[]): Option[] => {
+
+
+    const countryOptions = []
+    const allCountries = CountriesList.getCountriesAsJson()
+
+    for (const country of allCountries) {
+      if (supporedCountryCodes && supporedCountryCodes.length > 0 && !supporedCountryCodes.includes(country.countryCode)) {
+        continue
+      }
+      countryOptions.push({
+        title: country.countryName,
+        value: country.countryCode
+      })
+    }
+
     const results: Option[] = [
       {
         title: "Please select, you can type it",
         value: "",
         disabled: true
       },
-      ...countries.map((country) => ({
-        title: country.countryName,
-        value: country.countryCode
+      ...countryOptions
+    ]
+    return results
+  }
+
+  public static getUsaStates = (): Option[] => {
+    const states = CountriesList.getUsaStatesAsJson()
+    const results: Option[] = [
+      {
+        title: "Please select, you can type it",
+        value: "",
+        disabled: true
+      },
+      ...states.map((state) => ({
+        title: state.name,
+        value: state.code
       }))
     ]
     return results
@@ -55,7 +83,7 @@ export class SelectOptions {
 
   private static getOptionsFromEnum = (options): Option[] => [
     ...Object.values(options).map((option: any) => ({
-      title: option,
+      title: TextUtils.toTitleCase(option, true),
       value: option
     }))
   ]

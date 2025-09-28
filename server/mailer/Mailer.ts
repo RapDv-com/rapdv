@@ -1,5 +1,6 @@
 // Copyright (C) Konrad Gadzinowski
 
+import { Types } from "../types/Types"
 import { CheckEmail, EmailExistance } from "./CheckEmail"
 import nodemailer from "nodemailer"
 
@@ -173,7 +174,7 @@ export class Mailer {
       attachments: attachmentsEmail
     }
 
-    if (!!replyTo && replyTo.length > 0) {
+    if (Types.isTextDefined(replyTo)) {
       mailOptions.replyTo = replyTo
     }
 
@@ -221,7 +222,13 @@ export class Mailer {
     attachments: any[]
   ): Promise<string | undefined> {
     let fromEmail = '"' + this.name + '" <' + this.email + ">"
-    return this.sendMail(subject, toEmails, ccEmails, bccEmails, fromEmail, replyTo, contentHtml, attachments)
+
+    let replyToEmail = replyTo
+    if (!Types.isTextDefined(replyTo)) {
+      replyToEmail = process.env.SEND_REPLY_TO ?? null
+    }
+
+    return this.sendMail(subject, toEmails, ccEmails, bccEmails, fromEmail, replyToEmail, contentHtml, attachments)
   }
 
   public async doesEmailExist(email: string): Promise<boolean> {

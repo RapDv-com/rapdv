@@ -86,7 +86,7 @@ export class MockedApp extends RapDvApp {
         content: String,
         publishedDate: Date
       },
-      {}
+      [{}]
     )
 
     this.addCollection("Comment", {
@@ -101,5 +101,9 @@ export class MockedApp extends RapDvApp {
 
   public startRecurringTasks = async (mailer: Mailer) => {
     // Nothing to start
+  }
+
+  public addDatabaseEvolutions = async () => {
+    // Nothing to add
   }
 }

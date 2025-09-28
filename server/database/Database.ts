@@ -10,6 +10,7 @@ import mongoose from "mongoose"
 import { Mockgoose } from "mockgoose"
 import { CollectionSystem } from "./CollectionSystem"
 import { Collection } from "./Collection"
+import { RapDvApp } from "../RapDvApp"
 
 export enum QueryType {
   Include = "inlcude",
@@ -22,6 +23,9 @@ export class Database {
   public static IGNORE_NUMBER: number = -1
   public static SORT_NEWEST_FIRST = { createdAt: -1 }
   public static SORT_OLDEST_FIRST = { createdAt: 1 }
+  
+  public static ASC = 1 
+  public static DESC = -1
 
   private static RECONNECT_AFTER_MS = 20000
   private static RECONNECT_MAX_TRIES = 10
@@ -129,14 +133,14 @@ export class Database {
     }
   }
 
-  public async initDatabaseContent(customRoles: string[]) {
+  public async initDatabaseContent(customRoles: string[], customUserProps: any = {}) {
     // Init schemas
     new CollectionLog()
     new CollectionFile()
     new CollectionImageFile()
     new CollectionSystem()
     CollectionSystem.create()
-    new CollectionUser(customRoles)
+    new CollectionUser(customRoles, customUserProps)
     new CollectionUserSession()
   }
 
@@ -268,6 +272,8 @@ export class Database {
   }
 
   private connectToMongoDb() {
-    mongoose.connect(this.mongoDbUri)
+    mongoose.connect(this.mongoDbUri, {
+      autoIndex: process.env.AUTO_INDEX === "true" || !RapDvApp.isProduction(),
+    })
   }
 }

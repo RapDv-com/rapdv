@@ -30,17 +30,17 @@ export class CollectionUser extends Collection {
 
   public static getRoles = (): string[] => CollectionUser.ROLES
 
-  constructor(customRoles: string[]) {
+  constructor(customRoles: string[], customProps: any = {}) {
     CollectionUser.ROLES = [UserRole.User, UserRole.Admin, ...customRoles]
     super(
       "User",
       {
-        email: { type: String, unique: true },
+        email: { type: String, unique: true, sparse: true, lowercase: true, trim: true },
 
         emailVerified: { type: Boolean, default: false },
         emailVerificationCode: String, // For AuthEmailCodes
         verificationCodeEmailSentDate: { type: Date, default: new Date(0) },
-
+        
         password: String,
 
         failedLoginAttempts: {
@@ -67,14 +67,20 @@ export class CollectionUser extends Collection {
           type: String,
           enum: CollectionUser.ROLES,
           default: UserRole.User
-        }
+        },
+        ...customProps
       },
-      {
+      [
+        { firstName: 1},
+        { lastName: 1 },
+        { email: 1 },
+        { role: 1 },
+        {
         firstName: "text",
         lastName: "text",
         email: "text",
         role: "text"
-      },
+      }],
       (schema: Schema) => {
         schema.methods.getFullName = function (): string {
           let fullName = this.firstName

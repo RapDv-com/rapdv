@@ -16,8 +16,8 @@ export class Types {
   }
 
   public static isTextDefined = (text?: string | null):  boolean => {
-    if (!text) return false
-    if (text.trim().length === 0) return false
+    if (text == null) return false
+    if (String(text)?.trim().length === 0) return false
     return true
   }
 
@@ -26,4 +26,13 @@ export class Types {
     if (isNaN(result)) return defaultVal
     return result
   }
+
+  public static isValidEmail = (email: string): boolean => {
+    if (!Types.isTextDefined(email)) {
+      return false
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(email)
+  };
 }
