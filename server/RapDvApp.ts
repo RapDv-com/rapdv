@@ -207,15 +207,17 @@ export abstract class RapDvApp {
       const path = req.path === "/" ? "" : req.path
       const canonicalUrl = process.env.BASE_URL + path
 
-      const contentWithoutCss = sheet.collectStyles(renderedUi)
-      const styleTags = sheet.getStyleTags()
+      ReactDOMServer.renderToString(
+        sheet.collectStyles(renderedUi)
+      )
+      const styleTags = sheet.getStyleElement()
 
       const content = await this.getLayout(
         req,
         canonicalUrl,
         pageTitle,
         pageDescription,
-        contentWithoutCss,
+        renderedUi,
         styleTags,
         pageDisableIndexing,
         clientFilesId,
