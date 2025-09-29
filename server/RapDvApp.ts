@@ -220,8 +220,8 @@ export abstract class RapDvApp {
       let contentText = "<!DOCTYPE html>" + ReactDOMServer.renderToStaticMarkup(sheet.collectStyles(content))
       const styleTags = sheet.getStyleTags()
 
-      // Replace <!-- REACT_STYLES --> with styleTags
-      contentText = contentText.replace("&lt;!-- REACT_STYLES --&gt;", styleTags)
+      // Replace <!-- RAPDV_REACT_CUSTOM_STYLES --> with styleTags
+      contentText = contentText.replace("&lt;!-- RAPDV_REACT_CUSTOM_STYLES --&gt;", styleTags)
 
       // Inject CSRF token
       contentText = contentText.replace(/{{_csrf}}/g, res.locals._csrf)
