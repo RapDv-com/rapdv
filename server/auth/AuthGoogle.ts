@@ -11,6 +11,12 @@ export class AuthGoogle {
   private static DEBUG = false
 
   public static configure = () => {
+
+    if (!process.env.GOOGLE_CLIENT_ID) {
+      console.warn("Google OAuth2 is not configured. GOOGLE_CLIENT_ID is missing.")
+      return
+    }
+    
     passport.use(new GoogleStrategy({
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
