@@ -6,23 +6,27 @@ import { describe } from "mocha"
 import { MockedApp } from "../mocks/MockedApp"
 
 describe("AppServer", () => {
-  var app
+  let server
+  let app
 
   beforeEach(() => {
-    app = new Server(() => new MockedApp())
+    server = new Server(() => new MockedApp())
+    app = server.getApp()
   })
 
   afterEach(() => {
-    app = null
+    server = null
   })
 
-  it("express exists", () => {
-    expect(app.getExpress()).to.not.equal(null)
-    expect(app.getExpress()).to.not.equal(undefined)
+  it("main layout exists", () => {
+    const mainLayout = app.getLayout()
+    expect(mainLayout).to.not.equal(null)
+    expect(mainLayout).to.not.equal(undefined)
   })
 
-  it("listener exists", () => {
-    expect(app.appListener).to.not.equal(null)
-    expect(app.appListener).to.not.equal(undefined)
+  it("error view is defined", () => {
+    const errorView = app.getErrorView(new Error("Test error"))
+    expect(errorView).to.not.equal(null)
+    expect(errorView).to.not.equal(undefined)
   })
 })
