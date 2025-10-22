@@ -13,7 +13,7 @@ import { NavLink } from "..//ui/NavLink"
 import { FlashMessages } from "..//ui/FlashMessages"
 import { NavDropdownItem } from "..//ui/NavDropdownItem"
 import { NavDropdown } from "..//ui/NavDropdown"
-import { AppBasicInfo, RapDvApp } from "../RapDvApp"
+import { RapDvApp } from "../RapDvApp"
 import { Mailer } from "../mailer/Mailer"
 
 export class MockedApp extends RapDvApp {
@@ -38,10 +38,18 @@ export class MockedApp extends RapDvApp {
     this.addRoute("/privacy", ReqType.Get, async () => <div>Privacy policy</div>, "Privacy Policy", "Our privacy policy")
   }
 
-  getHeadTags = async () => ""
-
-  getLayout = async (req: Request, content: ReactNode, appInfo: AppBasicInfo): Promise<ReactNode> => {
+  getLayout = async (
+    req: Request,
+    canonicalUrl: string,
+    title: string,
+    description: string,
+    content: ReactNode | string,
+    disableIndexing: boolean,
+    clientFilesId: string,
+    otherOptions?: any
+  ): Promise<ReactNode> => {
     const year = new Date().getFullYear()
+    const appInfo = this.getBasicInfo()
     return (
       <>
         <header>
@@ -73,6 +81,12 @@ export class MockedApp extends RapDvApp {
       </>
     )
   }
+
+  getErrorView = async (error) => ({
+    title: "Error | Test App",
+    description: "Something went wrong",
+    content: <div>{error?.message}</div>
+  })
 
   setRoles = () => ["Writer"]
 
