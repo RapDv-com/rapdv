@@ -415,9 +415,9 @@ export abstract class RapDvApp {
     return []
   }
 
-  public setRoles = (): string[] => []
+  public getRoles = (): string[] => []
 
-  public setCustomUserProps = (): any => ({})
+  public getCustomUserProps = (): any => ({})
 
   public createDatabase = () => new Database()
 

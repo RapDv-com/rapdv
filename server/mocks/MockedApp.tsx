@@ -88,7 +88,7 @@ export class MockedApp extends RapDvApp {
     content: <div>{error?.message}</div>
   })
 
-  setRoles = () => ["Writer"]
+  getRoles = () => ["Writer"]
 
   getStorage = async () => {
     this.addCollection(
