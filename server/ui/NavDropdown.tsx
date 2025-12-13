@@ -11,6 +11,7 @@ import { InlineIcon } from "./InlineIcon"
 type Props = {
   title: string | React.ReactNode
   icon?: string
+  iconSize?: string
   req?: Request
   restrictions?: (Role | UserRole | string)[]
   className?: string
@@ -20,7 +21,7 @@ type Props = {
 
 export class NavDropdown extends React.Component<Props> {
   render(): ReactNode | string {
-    const { className, dropdownClassName, children, restrictions, title, icon, req } = this.props
+    const { className, dropdownClassName, children, restrictions, title, icon, iconSize, req } = this.props
 
     if (!!restrictions && !req) throw 'When setting restrictions to the NavDropdown, you also need to pass req'
 
@@ -32,7 +33,7 @@ export class NavDropdown extends React.Component<Props> {
     return (
       <li className={`nav-item dropdown ${className ?? ""}`}>
         <DropdownToggle className="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-          <InlineIcon src={icon} />
+          <InlineIcon src={icon} size={iconSize} />
           {title}
         </DropdownToggle>
         <ul className={`dropdown-menu ${dropdownClassName ?? ""}`}>{children}</ul>
