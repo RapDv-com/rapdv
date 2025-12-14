@@ -235,7 +235,7 @@ export abstract class RapDvApp {
   }
 
   public addRoutes = (
-    paths: (string | { path: string, priority: number, changefreq: string })[],
+    paths: string[] | { paths: string[], priority: number, changefreq: string },
     reqType: ReqType,
     content: (req: Request, res: Response, next: NextFunction, app: RapDvApp, mailer: Mailer) => Promise<ReactNode | string>,
     title?: string | SetText,
@@ -245,8 +245,14 @@ export abstract class RapDvApp {
     enableFilesUpload?: boolean,
     otherOptions?: any
   ) => {
-    for (const path of paths) {
-      this.addRoute(path, reqType, content, title, description, restrictions, disableIndexing, enableFilesUpload, otherOptions)
+    if (Array.isArray(paths)) {
+      for (const path of paths) {
+        this.addRoute(path, reqType, content, title, description, restrictions, disableIndexing, enableFilesUpload, otherOptions)
+      }
+    } else {
+      for (const path of paths.paths) {
+        this.addRoute({ path, priority: paths.priority, changefreq: paths.changefreq }, reqType, content, title, description, restrictions, disableIndexing, enableFilesUpload, otherOptions)
+      }
     }
   }
 
