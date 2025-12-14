@@ -41,7 +41,7 @@ export type AppBasicInfo = {
   customManifest?: JSON
 }
 
-type PageDefinition = { path: string, priority: number, changefreq: string }
+export type PageDefinition = { path: string, priority: number, changefreq: string }
 
 export abstract class RapDvApp {
   public abstract getBasicInfo: () => AppBasicInfo
