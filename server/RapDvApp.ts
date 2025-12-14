@@ -234,6 +234,22 @@ export abstract class RapDvApp {
     }
   }
 
+  public addRoutes = (
+    paths: (string | { path: string, priority: number, changefreq: string })[],
+    reqType: ReqType,
+    content: (req: Request, res: Response, next: NextFunction, app: RapDvApp, mailer: Mailer) => Promise<ReactNode | string>,
+    title?: string | SetText,
+    description?: string | SetText,
+    restrictions?: (Role | UserRole | string)[],
+    disableIndexing?: boolean | SetBoolean,
+    enableFilesUpload?: boolean,
+    otherOptions?: any
+  ) => {
+    for (const path of paths) {
+      this.addRoute(path, reqType, content, title, description, restrictions, disableIndexing, enableFilesUpload, otherOptions)
+    }
+  }
+
   public addRoute = (
     path: string | { path: string, priority: number, changefreq: string },
     reqType: ReqType,
