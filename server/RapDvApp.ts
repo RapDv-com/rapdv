@@ -73,6 +73,8 @@ export abstract class RapDvApp {
   protected publicUrls: Array<{ path: string, priority: number, changefreq: string }> = []
   protected mailer: Mailer
 
+  private similarRoutes: string[][] = []
+
   private commitNumber: string = Git.getCurrentCommitNumber(null) ?? Date.now().toString()
 
   public static isProduction = () => process.env.NODE_ENV === "production"
@@ -130,6 +132,8 @@ export abstract class RapDvApp {
   }
 
   public getPublicUrls = () => this.publicUrls
+
+  public getSimilarRoutes = () => this.similarRoutes
 
   public getMailer = () => this.mailer
 
@@ -246,10 +250,12 @@ export abstract class RapDvApp {
     otherOptions?: any
   ) => {
     if (Array.isArray(paths)) {
+      this.similarRoutes.push(paths)
       for (const path of paths) {
         this.addRoute(path, reqType, content, title, description, restrictions, disableIndexing, enableFilesUpload, otherOptions)
       }
     } else {
+      this.similarRoutes.push(paths.paths)
       for (const path of paths.paths) {
         this.addRoute({ path, priority: paths.priority, changefreq: paths.changefreq }, reqType, content, title, description, restrictions, disableIndexing, enableFilesUpload, otherOptions)
       }
