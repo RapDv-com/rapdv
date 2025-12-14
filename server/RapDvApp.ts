@@ -41,6 +41,8 @@ export type AppBasicInfo = {
   customManifest?: JSON
 }
 
+type PageDefinition = { path: string, priority: number, changefreq: string }
+
 export abstract class RapDvApp {
   public abstract getBasicInfo: () => AppBasicInfo
   public abstract getPages: () => Promise<void>
@@ -72,7 +74,7 @@ export abstract class RapDvApp {
   protected listener: ServerListener
   protected database: Database
   protected upload: any
-  protected publicUrls: Array<{ path: string, priority: number, changefreq: string }> = []
+  protected publicUrls: Array<PageDefinition> = []
   protected mailer: Mailer
 
   private similarRoutes: string[][] = []
@@ -270,7 +272,7 @@ export abstract class RapDvApp {
   }
 
   public addRoute = (
-    path: string | { path: string, priority: number, changefreq: string },
+    path: string | PageDefinition,
     reqType: ReqType,
     content: (req: Request, res: Response, next: NextFunction, app: RapDvApp, mailer: Mailer) => Promise<ReactNode | string>,
     title?: string | SetText,
@@ -290,7 +292,7 @@ export abstract class RapDvApp {
       if (Types.isString(path)) {
         this.publicUrls.push({ path: path as string, priority: 0.5, changefreq: "weekly" })
       } else {
-        this.publicUrls.push(path as { path: string, priority: number, changefreq: string })
+        this.publicUrls.push(path as PageDefinition)
       }
     }
 
@@ -446,7 +448,7 @@ export abstract class RapDvApp {
     return this.getProtocol(req) + "://" + this.getHost(req)
   }
 
-  public getDynamicUrls = async (): Promise<Array<{ path: string, priority: number, changefreq: string }>> => {
+  public getDynamicUrls = async (): Promise<Array<PageDefinition>> => {
     return []
   }
 
