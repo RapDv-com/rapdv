@@ -6,14 +6,14 @@ import { AppBasicInfo } from "../RapDvApp"
 import sharp from "sharp"
 
 export class PageMetadata {
-  private ICON_MIN_SIZE = 8
-  private ICON_MAX_SIZE = 2500
-  private ICON_TYPES = ["png", "jpg", "jpeg", "webp"]
-  private publicUrls: Array<{ path: string, priority: number, changefreq: string }> = []
+  protected ICON_MIN_SIZE = 8
+  protected ICON_MAX_SIZE = 2500
+  protected ICON_TYPES = ["png", "jpg", "jpeg", "webp"]
+  protected publicUrls: Array<{ path: string, priority: number, changefreq: string }> = []
 
-  private info: AppBasicInfo
-  private getDomain: (req: Request) => string
-  private getDynamicUrls: () => Promise<Array<{ path: string, priority: number, changefreq: string }>>
+  protected info: AppBasicInfo
+  protected getDomain: (req: Request) => string
+  protected getDynamicUrls: () => Promise<Array<{ path: string, priority: number, changefreq: string }>>
 
   constructor(info: AppBasicInfo, getDomain: (req: Request) => string, getDynamicUrls: () => Promise<Array<{ path: string, priority: number, changefreq: string }>>) {
     this.info = info

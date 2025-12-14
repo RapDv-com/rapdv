@@ -146,7 +146,7 @@ export class Server {
   }
 
   private addBasicRoutes = (app: RapDvApp): PageMetadata => {
-    const pageMetadata = new PageMetadata(app.getBasicInfo(), app.getDomain, app.getDynamicUrls)
+    const pageMetadata = app.getPageMegadata()
     app.addGenericRoute("/assets/manifest.json", ReqType.Get, pageMetadata.getManifest)
     app.addGenericRoute("/assets/icons/:icon", ReqType.Get, pageMetadata.getIcon)
     app.addGenericRoute("/robots.txt", ReqType.Get, pageMetadata.getRobotsTxt)

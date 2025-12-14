@@ -27,6 +27,7 @@ import express from "express"
 import bodyParser from "body-parser"
 import { Git } from "./system/Git"
 import { CollectionUserSession } from "./database/CollectionUserSession"
+import { PageMetadata } from "./pages/PageMetadata"
 
 export type EndpointLogic = (req: Request, res: Response, next: NextFunction, app: RapDvApp, mailer: Mailer) => void
 export type TaskLogic = () => void
@@ -130,6 +131,10 @@ export abstract class RapDvApp {
     CollectionImageFile.startJobForRemovingAllUnusedImages()
     CollectionUserSession.startJobForRemovingAllExpiredSessions()
     this.startRecurringTasks(this.mailer)
+  }
+
+  public getPageMegadata = (): PageMetadata | null => {
+    return new PageMetadata(this.getBasicInfo(), this.getDomain, this.getDynamicUrls)
   }
 
   public getPublicUrls = () => this.publicUrls
