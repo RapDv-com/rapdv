@@ -45,6 +45,7 @@ export abstract class RapDvApp {
   public abstract getPages: () => Promise<void>
   public abstract getLayout: (
     req: Request,
+    res: Response,
     canonicalUrl: string,
     title: string,
     description: string,
@@ -212,6 +213,7 @@ export abstract class RapDvApp {
 
       const content = await this.getLayout(
         req,
+        res,
         canonicalUrl,
         pageTitle,
         pageDescription,

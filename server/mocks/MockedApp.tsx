@@ -15,6 +15,7 @@ import { NavDropdownItem } from "..//ui/NavDropdownItem"
 import { NavDropdown } from "..//ui/NavDropdown"
 import { RapDvApp } from "../RapDvApp"
 import { Mailer } from "../mailer/Mailer"
+import { Response } from "express"
 
 export class MockedApp extends RapDvApp {
   getBasicInfo = () => ({
@@ -40,6 +41,7 @@ export class MockedApp extends RapDvApp {
 
   getLayout = async (
     req: Request,
+    res: Response,
     canonicalUrl: string,
     title: string,
     description: string,
