@@ -2,20 +2,20 @@
 
 import { Request, Response } from "express"
 import { HttpStatus } from "../network/HttpStatus"
-import { AppBasicInfo } from "../RapDvApp"
+import { AppBasicInfo, PagesDefinition } from "../RapDvApp"
 import sharp from "sharp"
 
 export class PageMetadata {
   protected ICON_MIN_SIZE = 8
   protected ICON_MAX_SIZE = 2500
   protected ICON_TYPES = ["png", "jpg", "jpeg", "webp"]
-  protected publicUrls: Array<{ path: string, priority: number, changefreq: string }> = []
+  protected publicUrls: Array<PagesDefinition> = []
 
   protected info: AppBasicInfo
   protected getDomain: (req: Request) => string
-  protected getDynamicUrls: () => Promise<Array<{ path: string, priority: number, changefreq: string }>>
+  protected getDynamicUrls: () => Promise<Array<PagesDefinition>>
 
-  constructor(info: AppBasicInfo, getDomain: (req: Request) => string, getDynamicUrls: () => Promise<Array<{ path: string, priority: number, changefreq: string }>>) {
+  constructor(info: AppBasicInfo, getDomain: (req: Request) => string, getDynamicUrls: () => Promise<Array<PagesDefinition>>) {
     this.info = info
     this.getDomain = getDomain
     this.getDynamicUrls = getDynamicUrls
@@ -121,7 +121,7 @@ export class PageMetadata {
     res.type(type).send(file)
   }
 
-  public setPublicUrls = (publicUrls: Array<{ path: string, priority: number, changefreq: string }>) => (this.publicUrls = publicUrls)
+  public setPublicUrls = (publicUrls: Array<PagesDefinition>) => (this.publicUrls = publicUrls)
 
   public getRobotsTxt = async (req: Request, res: Response) => {
     res.status(HttpStatus.OK)
@@ -134,9 +134,25 @@ export class PageMetadata {
     res.type("application/xml")
 
     const dynamicUrls = await this.getDynamicUrls()
+
     const allUrls = [...this.publicUrls, ...dynamicUrls]
 
-    const sortedPublicUrls = allUrls.sort((a, b) => {
+    const sortedPublicUrls = allUrls
+    .filter((data) => {
+      if (data.paths.length === 0) {
+        return false
+      }
+
+      // Remove dynamic URLs
+      for (const urlPath of data.paths) {
+        const urlHasParameters = !!["*", "+", ":", ";", "?", "{", "}", "[", "]", "{", "}", "$", "\\"].find((character) => urlPath.includes(character))
+        if (urlHasParameters) {
+          return false
+        }
+      }
+      return true
+    })
+    .sort((a, b) => {
       if (a.priority > b.priority) {
         return -1
       }
@@ -152,7 +168,7 @@ export class PageMetadata {
                 .map(
                   (data) => `
                 <url>
-                  <loc>${process.env.BASE_URL}${data.path}</loc>
+                  <loc>${process.env.BASE_URL}${data.paths[0]}</loc>
                   <priority>${data.priority}</priority>
                   <changefreq>${data.changefreq}</changefreq>
                 </url>

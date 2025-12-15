@@ -42,6 +42,7 @@ export type AppBasicInfo = {
 }
 
 export type PageDefinition = { path: string, priority: number, changefreq: string }
+export type PagesDefinition = { paths: string[], priority: number, changefreq: string }
 
 export abstract class RapDvApp {
   public abstract getBasicInfo: () => AppBasicInfo
@@ -74,7 +75,7 @@ export abstract class RapDvApp {
   protected listener: ServerListener
   protected database: Database
   protected upload: any
-  protected publicUrls: Array<PageDefinition> = []
+  protected publicUrls: Array<PagesDefinition> = []
   protected mailer: Mailer
 
   private similarRoutes: string[][] = []
@@ -248,7 +249,7 @@ export abstract class RapDvApp {
   }
 
   public addRoutes = (
-    paths: string[] | { paths: string[], priority: number, changefreq: string },
+    paths: string[] | PagesDefinition,
     reqType: ReqType,
     content: (req: Request, res: Response, next: NextFunction, app: RapDvApp, mailer: Mailer) => Promise<ReactNode | string>,
     title?: string | SetText,
@@ -258,13 +259,23 @@ export abstract class RapDvApp {
     enableFilesUpload?: boolean,
     otherOptions?: any
   ) => {
+    const noRestructions = !restrictions || restrictions.length === 0
+
     if (Array.isArray(paths)) {
       this.similarRoutes.push(paths)
+      if (noRestructions && !disableIndexing) {
+        this.publicUrls.push({ paths, priority: 0.5, changefreq: "weekly" })
+      }
+
       for (const path of paths) {
         this.addRoute(path, reqType, content, title, description, restrictions, disableIndexing, enableFilesUpload, otherOptions)
       }
     } else {
       this.similarRoutes.push(paths.paths)
+      if (noRestructions && !disableIndexing) {
+        this.publicUrls.push({ ...paths, paths: paths.paths })
+      }
+      
       for (const path of paths.paths) {
         this.addRoute({ path, priority: paths.priority, changefreq: paths.changefreq }, reqType, content, title, description, restrictions, disableIndexing, enableFilesUpload, otherOptions)
       }
@@ -285,14 +296,14 @@ export abstract class RapDvApp {
     if (!this.publicUrls) this.publicUrls = []
     const noRestructions = !restrictions || restrictions.length === 0
     const urlPath = Types.isString(path) ? path : (path as any).path
-    const urlHasParameters = !!["*", "+", ":", ";", "?", "{", "}", "[", "]", "{", "}", "$", "\\"].find((character) => urlPath.includes(character))
 
-    const isPublicUrlAdded: boolean = !!this.publicUrls.find((publicUrl) => publicUrl.path === urlPath)
-    if (!isPublicUrlAdded && noRestructions && !urlHasParameters && !disableIndexing) {
+    const isPublicUrlAdded: boolean = !!this.publicUrls.find((publicUrl) => publicUrl.paths.includes(urlPath))
+    if (!isPublicUrlAdded && noRestructions && !disableIndexing) {
       if (Types.isString(path)) {
-        this.publicUrls.push({ path: path as string, priority: 0.5, changefreq: "weekly" })
+        this.publicUrls.push({ paths: [path] as string[], priority: 0.5, changefreq: "weekly" })
       } else {
-        this.publicUrls.push(path as PageDefinition)
+        const pathData = path as PageDefinition
+        this.publicUrls.push({ ...pathData, paths: [pathData.path]})
       }
     }
 
@@ -448,7 +459,7 @@ export abstract class RapDvApp {
     return this.getProtocol(req) + "://" + this.getHost(req)
   }
 
-  public getDynamicUrls = async (): Promise<Array<PageDefinition>> => {
+  public getDynamicUrls = async (): Promise<Array<PagesDefinition>> => {
     return []
   }
 
