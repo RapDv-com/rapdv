@@ -54,6 +54,39 @@ export class CountriesList {
     ];
   }
 
+  public static getEuCountriesForOSSInvoiceList(): Array<string> {
+    return [
+      // EU countries
+      "AT",
+      "BE",
+      "BG",
+      "CY",
+      "CZ",
+      "DE",
+      "DK",
+      "EE",
+      "ES",
+      "FI",
+      "FR",
+      "GR",
+      "HR",
+      "HU",
+      "IE",
+      "IT",
+      "LT",
+      "LU",
+      "LV",
+      "MT",
+      "NL",
+      "PL",
+      "PT",
+      "RO",
+      "SE",
+      "SI",
+      "SK",
+    ];
+  }
+
   public static getForbiddenCountriesList(): Array<string> {
     return ["BY", "CN", "CU", "IR", "KP", "RU", "SD", "SY", "CI", "MM", "SS"];
   }
