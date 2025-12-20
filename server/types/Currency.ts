@@ -95,15 +95,17 @@ export class Currency {
 
     priceText = Currency.addCommaAtThousands(priceText);
 
-    if (!currencyCode) currencyCode = "USD";
-    currencyCode = currencyCode.toUpperCase();
-
-    let currencies: Array<Currency> = Currency.getCurrencies()
-    for (let currency of currencies) {
-      if (currency.code == currencyCode) {
-        if (currency.isSymbolInFront) priceText = currency.symbol + priceText;
-        else priceText = priceText + currency.symbol;
-        break;
+    if (currencyCode !== "") {
+      if (!currencyCode) currencyCode = "USD";
+      currencyCode = currencyCode.toUpperCase();
+  
+      let currencies: Array<Currency> = Currency.getCurrencies()
+      for (let currency of currencies) {
+        if (currency.code == currencyCode) {
+          if (currency.isSymbolInFront) priceText = currency.symbol + priceText;
+          else priceText = priceText + currency.symbol;
+          break;
+        }
       }
     }
 
