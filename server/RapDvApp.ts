@@ -248,6 +248,34 @@ export abstract class RapDvApp {
     }
   }
 
+  private addSimilarRoutes = (
+    paths: string[] | PagesDefinition, 
+    onAddPath: (path: string | PageDefinition, restrictions?: (Role | UserRole | string)[], disableIndexing?: boolean | SetBoolean) => void,
+    restrictions?: (Role | UserRole | string)[], 
+    disableIndexing?: boolean | SetBoolean) => {
+    const noRestructions = !restrictions || restrictions.length === 0
+
+    if (Array.isArray(paths)) {
+      this.similarRoutes.push(paths)
+      if (noRestructions && !disableIndexing) {
+        this.publicUrls.push({ paths, priority: 0.5, changefreq: "weekly" })
+      }
+
+      for (const path of paths) {
+        onAddPath(path, restrictions, disableIndexing)
+      }
+    } else {
+      this.similarRoutes.push(paths.paths)
+      if (noRestructions && !disableIndexing) {
+        this.publicUrls.push({ ...paths, paths: paths.paths })
+      }
+      
+      for (const path of paths.paths) {
+        onAddPath({ path, priority: paths.priority, changefreq: paths.changefreq }, restrictions, disableIndexing)
+      }
+    }
+  }
+
   public addRoutes = (
     paths: string[] | PagesDefinition,
     reqType: ReqType,
@@ -259,27 +287,9 @@ export abstract class RapDvApp {
     enableFilesUpload?: boolean,
     otherOptions?: any
   ) => {
-    const noRestructions = !restrictions || restrictions.length === 0
-
-    if (Array.isArray(paths)) {
-      this.similarRoutes.push(paths)
-      if (noRestructions && !disableIndexing) {
-        this.publicUrls.push({ paths, priority: 0.5, changefreq: "weekly" })
-      }
-
-      for (const path of paths) {
-        this.addRoute(path, reqType, content, title, description, restrictions, disableIndexing, enableFilesUpload, otherOptions)
-      }
-    } else {
-      this.similarRoutes.push(paths.paths)
-      if (noRestructions && !disableIndexing) {
-        this.publicUrls.push({ ...paths, paths: paths.paths })
-      }
-      
-      for (const path of paths.paths) {
-        this.addRoute({ path, priority: paths.priority, changefreq: paths.changefreq }, reqType, content, title, description, restrictions, disableIndexing, enableFilesUpload, otherOptions)
-      }
-    }
+    this.addSimilarRoutes(paths, (path, restrictions, disableIndexing) => {
+      this.addRoute(path, reqType, content, title, description, restrictions, disableIndexing, enableFilesUpload, otherOptions)
+    }, restrictions, disableIndexing)
   }
 
   public addRoute = (
@@ -322,10 +332,23 @@ export abstract class RapDvApp {
     this.addGenericRoute(path, reqType, logic, restrictions, enableFilesUpload)
   }
 
+  public addGenericRoutes = (
+    paths: string[] | PagesDefinition,
+    reqType: ReqType,
+    logic: (req: Request, res: Response, next: NextFunction, app: RapDvApp, mailer: Mailer) => any,
+    restrictions?: (Role | UserRole | string)[],
+    enableFilesUpload?: boolean
+  ) => {
+    this.addSimilarRoutes(paths, (path, restrictions, disableIndexing) => {
+      const pathUrl: string = Types.isString(path) ? path as string : (path as PageDefinition).path
+      this.addGenericRoute(pathUrl, reqType, logic, restrictions, enableFilesUpload)
+    }, restrictions)
+  }
+
   public addGenericRoute = (
     path: string,
     reqType: ReqType,
-    logic: (req: Request, res: Response, next: NextFunction) => any,
+    logic: (req: Request, res: Response, next: NextFunction, app: RapDvApp, mailer: Mailer) => any,
     restrictions?: (Role | UserRole | string)[],
     enableFilesUpload?: boolean
   ) => {
@@ -339,7 +362,7 @@ export abstract class RapDvApp {
       checkAuthorization,
       this.beforeRouteIsRendered(restrictions),
       Auth.checkSystem,
-      logic
+      (req: Request, res: Response, next: NextFunction) => logic(req, res, next, this, this.mailer)
     ]
 
     if (reqType === ReqType.Get) {
