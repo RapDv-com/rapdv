@@ -178,7 +178,6 @@ export abstract class RapDvApp {
             return
           }
 
-          const appInfo = this.getBasicInfo()
           this.renderView(req, res, next, renderedUi, title, description, disableIndexing, otherOptions)
         } catch (error) {
           console.error("Error on rendering views. " + error)
