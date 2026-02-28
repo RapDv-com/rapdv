@@ -11,6 +11,9 @@
     "forceConsistentCasingInFileNames": true,
     "typeRoots": [
       "node_modules/@types"
-    ]
+    ],
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "strictPropertyInitialization": false
   },
 }

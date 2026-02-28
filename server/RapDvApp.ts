@@ -12,7 +12,6 @@ import { ReactNode } from "react"
 import { Database } from "./database/Database"
 import { Collection } from "./database/Collection"
 import { Response } from "express"
-import { IndexDefinition, Schema, SchemaDefinition } from "mongoose"
 import { Auth } from "./auth/Auth"
 import { Role } from "./Role"
 import { UserRole } from "./database/CollectionUser"
@@ -60,6 +59,7 @@ export abstract class RapDvApp {
   }>
   public abstract initAuth: () => Promise<void>
   public abstract getStorage: () => Promise<void>
+  public abstract getEntities: () => Promise<Function[]>
   public abstract startRecurringTasks: (mailer: Mailer) => Promise<void>
   public abstract addDatabaseEvolutions: () => Promise<void>
 
@@ -379,8 +379,8 @@ export abstract class RapDvApp {
     next()
   }
 
-  public addCollection = (name: string, schema: SchemaDefinition, indexes?: IndexDefinition[], modifySchema?: (schema: Schema) => Schema): Collection => {
-    return new Collection(name, schema, indexes, modifySchema)
+  public addCollection = (name: string, entityClass: Function): Collection => {
+    return new Collection(name, entityClass)
   }
 
   public addDbEvolution = (

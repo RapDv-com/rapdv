@@ -1,12 +1,12 @@
 // Copyright (C) Konrad Gadzinowski
 
+import 'reflect-metadata'
 import React, { ReactNode } from "react"
 import { Role } from "..//Role"
 import { ReqType } from "..//ReqType"
 import { Nav } from "..//ui/Nav"
 import { Footer } from "..//ui/Footer"
 import { Link } from "..//ui/Link"
-import { Schema } from "mongoose"
 import { Request } from "..//server/Request"
 import { UserRole } from "..//database/CollectionUser"
 import { NavLink } from "..//ui/NavLink"
@@ -15,6 +15,28 @@ import { NavDropdownItem } from "..//ui/NavDropdownItem"
 import { NavDropdown } from "..//ui/NavDropdown"
 import { AppBasicInfo, RapDvApp } from "../RapDvApp"
 import { Mailer } from "../mailer/Mailer"
+import { Column, Entity, ManyToOne } from "typeorm"
+import { RapDvBaseEntity } from "../database/RapDvBaseEntity"
+import { User } from "../database/CollectionUser"
+
+@Entity('mock_posts')
+class MockPost extends RapDvBaseEntity {
+  @Column({ unique: true, nullable: true }) key: string
+  @Column({ nullable: true, type: 'text' }) title: string
+  @Column({ nullable: true, type: 'text' }) description: string
+  @Column({ nullable: true, type: 'text' }) content: string
+  @Column({ nullable: true, type: 'timestamptz' }) publishedDate: Date
+}
+
+@Entity('mock_comments')
+class MockComment extends RapDvBaseEntity {
+  @Column({ nullable: true, type: 'text' }) content: string
+  @ManyToOne(() => MockPost, { nullable: true }) post: MockPost
+  @Column({ nullable: true }) postId: string
+  @ManyToOne(() => User, { nullable: true }) author: User
+  @Column({ nullable: true }) authorId: string
+  @Column({ nullable: true, type: 'timestamptz' }) publishedDate: Date
+}
 
 export class MockedApp extends RapDvApp {
   getBasicInfo = () => ({
@@ -40,12 +62,18 @@ export class MockedApp extends RapDvApp {
 
   getHeadTags = async () => ""
 
-  getLayout = async (req: Request, content: ReactNode, appInfo: AppBasicInfo): Promise<ReactNode> => {
+  getErrorView = async (error) => ({
+    title: "Error",
+    description: "Something went wrong",
+    content: <div>Error: {error}</div>
+  })
+
+  getLayout = async (req: Request, canonicalUrl: string, title: string, description: string, content: ReactNode, disableIndexing: boolean, clientFilesId: string, otherOptions?: any): Promise<ReactNode> => {
     const year = new Date().getFullYear()
     return (
       <>
         <header>
-          <Nav appName={appInfo.name}>
+          <Nav appName="Test App">
             <NavLink href="/log-in" icon="bi bi-box-arrow-in-left" req={req} restrictions={[Role.Guest]}>
               Log In
             </NavLink>
@@ -77,33 +105,17 @@ export class MockedApp extends RapDvApp {
   setRoles = () => ["Writer"]
 
   getStorage = async () => {
-    this.addCollection(
-      "Post",
-      {
-        key: { type: String, unique: true },
-        title: String,
-        description: String,
-        content: String,
-        publishedDate: Date
-      },
-      [{}]
-    )
-
-    this.addCollection("Comment", {
-      content: String,
-      post: { type: Schema.Types.ObjectId, ref: "Post" },
-      author: { type: Schema.Types.ObjectId, ref: "User" },
-      publishedDate: Date
-    })
-
-    await this.addDbEvolution(1, "Initial database version", async (currentVersion: number) => {})
+    this.addCollection("Post", MockPost)
+    this.addCollection("Comment", MockComment)
   }
+
+  public getEntities = async () => [MockPost, MockComment]
 
   public startRecurringTasks = async (mailer: Mailer) => {
     // Nothing to start
   }
 
   public addDatabaseEvolutions = async () => {
-    // Nothing to add
+    await this.addDbEvolution(1, "Initial database version", async (currentVersion: number) => {})
   }
 }

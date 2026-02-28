@@ -2,7 +2,6 @@
 
 import { NextFunction, Response } from "express"
 import { validationResult } from "express-validator"
-import { HydratedDocument } from "mongoose"
 import { CollectionSystem } from "../database/CollectionSystem"
 import { CollectionUser, UserRole, UserStatus } from "../database/CollectionUser"
 import { Role } from "../Role"
@@ -42,7 +41,7 @@ export class Auth {
     return token
   }
 
-  public static doesUserHaveAccess = (user?: HydratedDocument<any>, rolesAllowed?: (Role | UserRole | string)[]) => {
+  public static doesUserHaveAccess = (user?: any, rolesAllowed?: (Role | UserRole | string)[]) => {
     if (!rolesAllowed || rolesAllowed.length === 0 || rolesAllowed.includes(Auth.SETUP)) return true
     if (!user && rolesAllowed.includes(Role.Guest)) return true
     if (!user) return false
@@ -107,7 +106,7 @@ export class Auth {
     return true
   }
 
-  public static logInUser(req: Request, user: HydratedDocument<any>): Promise<HydratedDocument<any>> {
+  public static logInUser(req: Request, user: any): Promise<any> {
     const self = this
     return new Promise<void>(async (resolve, reject) => {
       req.logIn(user, async (error) => {

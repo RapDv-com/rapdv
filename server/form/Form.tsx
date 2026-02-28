@@ -5,7 +5,6 @@ import { FlashType, Request } from "../server/Request"
 import { check } from "express-validator"
 import { TextUtils } from "../text/TextUtils"
 import { ContextRunner, ValidationChain } from "express-validator/src/chain"
-import { HydratedDocument } from "mongoose"
 import { Collection } from "../database/Collection"
 import { Network } from "../network/Network"
 import spacetime from "spacetime"
@@ -208,12 +207,12 @@ export class Form {
     collectionName: string,
     queryData: any,
     populate?: string[]
-  ): Promise<{ isNew: boolean; entry: HydratedDocument<any> | undefined }> => {
+  ): Promise<{ isNew: boolean; entry: any | undefined }> => {
     const isNew = !urlParameter
     let entry: any
     if (isNew) {
       const collection = Collection.get(collectionName)
-      entry = new collection.model()
+      entry = collection.create()
     } else {
       entry = await Collection.findEntry(collectionName, queryData, populate)
     }

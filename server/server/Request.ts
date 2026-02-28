@@ -1,7 +1,6 @@
 // Copyright (C) Konrad Gadzinowski
 
 import { Request as ExpressRequest } from "express"
-import { HydratedDocument } from "mongoose"
 
 export enum FlashType {
   Info = "info",
@@ -23,9 +22,9 @@ export type File = {
 
 type RequestExtensions = {
   flash: (type: FlashType, message: string | string[]) => void
-  logIn: (user: HydratedDocument<any>, callback: (error: string) => void) => void
+  logIn: (user: any, callback: (error: string) => void) => void
   sessionID?: string
-  user?: HydratedDocument<any>
+  user?: any
   files?: File[]
   session?: any
   error: string

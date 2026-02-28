@@ -1,53 +1,37 @@
 // Copyright (C) Konrad Gadzinowski
 
-import { CollectionEvolution } from "./CollectionEvolution"
-import { CollectionLog } from "./CollectionLog"
-import { CollectionFile } from "./CollectionFile"
-import { CollectionImageFile } from "./CollectionImageFile"
-import { CollectionUser } from "./CollectionUser"
-import { CollectionUserSession } from "./CollectionUserSession"
-import mongoose from "mongoose"
-import { Mockgoose } from "mockgoose"
-import { CollectionSystem } from "./CollectionSystem"
-import { Collection } from "./Collection"
-import { RapDvApp } from "../RapDvApp"
+import 'reflect-metadata'
+import { DataSource } from 'typeorm'
+import { Collection } from './Collection'
+import { CollectionEvolution, Evolution } from './CollectionEvolution'
 
 export enum QueryType {
-  Include = "inlcude",
-  Exclude = "exclude",
-  Ignore = "ignore"
+  Include = 'inlcude',
+  Exclude = 'exclude',
+  Ignore = 'ignore',
 }
 
 export class Database {
-  
+  public static dataSource: DataSource
+  public static isTest: boolean = false
+
   public static IGNORE_NUMBER: number = -1
   public static SORT_NEWEST_FIRST = { createdAt: -1 }
   public static SORT_OLDEST_FIRST = { createdAt: 1 }
-  
-  public static ASC = 1 
+
+  public static ASC = 1
   public static DESC = -1
 
-  private static RECONNECT_AFTER_MS = 20000
-  private static RECONNECT_MAX_TRIES = 10
-  private static MSG_CLEAR_CACHE: string = "clearCache"
-
-  public static isTest: boolean = false
-
+  private static MSG_CLEAR_CACHE: string = 'clearCache'
   private static onClearCache
-
-  public reconnect: boolean
-  public mongoDbUri
-  public reconnectedTries = 0
-  public reconnectTimer
-  public modelEvolution
 
   constructor() {}
 
   public static getEntryId(entry): any {
     if (!entry) return null
-    if (entry._id) entry = entry._id
-    entry = entry.toString()
-    return entry
+    if (entry._id) return entry._id.toString()
+    if (entry.id) return entry.id.toString()
+    return entry.toString()
   }
 
   public static async createOrGetRef(instance: any, propertyName, createNew: () => Promise<any>, findById: (id) => Promise<any>): Promise<any> {
@@ -70,7 +54,7 @@ export class Database {
     accentsToLatin: (text: string) => string,
     generateRandomString: (textLength: number) => string
   ): Promise<string> {
-    let key = ""
+    let key = ''
 
     if (initialKey) {
       key = initialKey.toLowerCase()
@@ -79,14 +63,12 @@ export class Database {
       key = generateRandomString(defaultKeyLength)
     }
 
-    // Include user data
     key = accentsToLatin(key)
-    key = key.replace(/[.,;:\s]/g, "-").replace(/[^A-Z0-9\-_]/gi, "")
+    key = key.replace(/[.,;:\s]/g, '-').replace(/[^A-Z0-9\-_]/gi, '')
 
     let currentId = null
     if (_id) currentId = _id.toString()
 
-    // Check for already existing user with this key
     try {
       let addedDash = false
       let isDuplicate = true
@@ -100,41 +82,84 @@ export class Database {
 
         if (!addedDash) {
           addedDash = true
-          keyBase = key + "-"
+          keyBase = key + '-'
         }
         key = keyBase + anotherNumber
         anotherNumber++
       }
     } catch (exception) {
-      console.error("couldn't check if there is already user with this key. " + exception)
+      console.error('couldn\'t check if there is already user with this key. ' + exception)
     }
 
     return key
   }
 
-  public init = async (mongoDbUri: string, reconnect: boolean) => {
-    this.reconnect = reconnect
-    this.reconnectedTries = 0
-    this.mongoDbUri = mongoDbUri
-    mongoose.Promise = global.Promise
-
+  public init = async (databaseUrl: string, isProd: boolean, customEntities: Function[] = []) => {
     Collection.clearCollections()
 
-    if (mongoDbUri.indexOf("mongodb://") < 0) {
-      // Tests
-      Database.isTest = true
-      let mockgoose = new Mockgoose(mongoose)
+    // Import built-in entities
+    const { Log } = require('./CollectionLog')
+    const { File } = require('./CollectionFile')
+    const { ImageFile } = require('./CollectionImageFile')
+    const { System } = require('./CollectionSystem')
+    const { User } = require('./CollectionUser')
+    const { UserSession } = require('./CollectionUserSession')
 
-      await mockgoose.prepareStorage()
-      await this.setupConnection()
+    const builtInEntities = [Evolution, Log, File, ImageFile, System, User, UserSession]
+    const allEntities = [...builtInEntities, ...customEntities]
+
+    if (!databaseUrl || (!databaseUrl.startsWith('postgresql') && !databaseUrl.startsWith('postgres'))) {
+      // Test mode: use pg-mem
+      Database.isTest = true
+      const { newDb } = require('pg-mem')
+      const db = newDb()
+      Database.dataSource = db.adapters.createTypeormDataSource({
+        type: 'postgres',
+        entities: allEntities,
+        synchronize: true,
+        logging: false,
+      })
+      await Database.dataSource.initialize()
+      console.info('pg-mem (in-memory PostgreSQL) connection is open for testing')
     } else {
-      // Development or production
-      await this.setupConnection()
+      Database.dataSource = new DataSource({
+        type: 'postgres',
+        url: databaseUrl,
+        entities: allEntities,
+        migrations: ['migrations/*.ts'],
+        migrationsRun: false,
+        synchronize: false,
+        logging: !isProd,
+        ssl: isProd ? { rejectUnauthorized: false } : false,
+      })
+      await Database.dataSource.initialize()
+      console.info('PostgreSQL connection is open')
     }
+
+    // Init evolution collection
+    new CollectionEvolution()
+
+    // Handle graceful shutdown
+    const onClose = async () => {
+      if (Database.dataSource && Database.dataSource.isInitialized) {
+        await Database.dataSource.destroy()
+        console.info('PostgreSQL connection closed')
+      }
+      process.exit(0)
+    }
+
+    process.on('SIGINT', onClose)
+    process.on('SIGTERM', onClose)
   }
 
   public async initDatabaseContent(customRoles: string[], customUserProps: any = {}) {
-    // Init schemas
+    const { CollectionLog } = require('./CollectionLog')
+    const { CollectionFile } = require('./CollectionFile')
+    const { CollectionImageFile } = require('./CollectionImageFile')
+    const { CollectionSystem } = require('./CollectionSystem')
+    const { CollectionUser } = require('./CollectionUser')
+    const { CollectionUserSession } = require('./CollectionUserSession')
+
     new CollectionLog()
     new CollectionFile()
     new CollectionImageFile()
@@ -147,7 +172,7 @@ export class Database {
   public static clearCache() {
     if (!!process.send) {
       process.send({
-        task: Database.MSG_CLEAR_CACHE
+        task: Database.MSG_CLEAR_CACHE,
       })
     } else {
       if (Database.onClearCache) Database.onClearCache()
@@ -156,71 +181,9 @@ export class Database {
 
   public onClearCache(onClearCache: () => void) {
     Database.onClearCache = onClearCache
-    process.on("message", (msg: any) => {
+    process.on('message', (msg: any) => {
       if (msg.task === Database.MSG_CLEAR_CACHE) {
         if (Database.onClearCache) Database.onClearCache()
-      }
-    })
-  }
-
-  private setupConnection = (): Promise<void> => {
-    return new Promise<void>((resolve, reject) => {
-
-      const onDbConnectionOpened = () => {
-        // We're connected!
-        console.info("Mongoose connection is open")
-    
-        // Set models
-        const collectionEvolution = new CollectionEvolution()
-        this.modelEvolution = collectionEvolution.model
-        resolve()
-      }
-
-      this.connectToMongoDb()
-  
-      // Set connection
-      let db = mongoose.connection
-  
-      db.on("error", console.error.bind(console, "connection error:"))
-      db.once("open", () => {
-        onDbConnectionOpened()
-      })
-  
-      db.on("connected", () => {
-        console.info("Mongoose default connection open to " + this.mongoDbUri)
-      })
-  
-      db.on("error", (error) => {
-        console.info("Mongoose default connection error: " + error)
-        mongoose.disconnect()
-  
-        if (this.reconnectedTries >= Database.RECONNECT_MAX_TRIES) return
-        if (!this.reconnect) return
-  
-        this.reconnectTimer = setTimeout(() => {
-          this.connectToMongoDb()
-          this.reconnectedTries++
-        }, Database.RECONNECT_AFTER_MS)
-      })
-  
-      db.on("disconnected", () => {
-        console.info("Mongoose default connection disconnected")
-      })
-  
-      // If the Node process ends, close the Mongoose connection
-      const onClose = async() => {
-        await db.close()
-        console.info("Mongoose default connection disconnected through app termination")
-        if (this.reconnectTimer) clearTimeout(this.reconnectTimer)
-        process.exit(0)
-      }
-  
-      process.on("SIGINT", onClose)
-      process.on("SIGTERM", onClose)
-
-      const CONNECTED = 1
-      if (mongoose.connection.readyState === CONNECTED) {
-        onDbConnectionOpened()
       }
     })
   }
@@ -230,23 +193,22 @@ export class Database {
     description: string,
     onDbVersionChangedCallback: (currentVersion: number) => Promise<any>
   ): Promise<any> {
-
     return new Promise<string | void>(async (resolve, reject) => {
       try {
-        const evolution = await this.modelEvolution.findOne({}, null, { sort: { date: -1 } })
+        const repo = Database.dataSource.getRepository(Evolution)
+        const evolution = await repo.findOne({ where: {}, order: { date: 'DESC' } })
 
         let dbVersionChanged: boolean = false
 
         if (!evolution) {
-          // First version
           dbVersionChanged = true
-          console.info("Initial database created. Scheme ver.: " + newVersion)
+          console.info('Initial database created. Scheme ver.: ' + newVersion)
           await onDbVersionChangedCallback(newVersion)
         } else {
           let currentVersion: number = evolution.number
           if (currentVersion < newVersion) {
             dbVersionChanged = true
-            console.info("Database version changed: " + currentVersion + " -> " + newVersion)
+            console.info('Database version changed: ' + currentVersion + ' -> ' + newVersion)
             console.info('Starting migration...')
             await onDbVersionChangedCallback(currentVersion)
             console.info('Migration was successful!')
@@ -254,26 +216,19 @@ export class Database {
         }
 
         if (dbVersionChanged) {
-          // Set new database version
-          let evolution = new this.modelEvolution({
+          const newEvolution = repo.create({
             number: newVersion,
             comments: description,
-            date: new Date()
+            date: new Date(),
           })
-          await evolution.save()
+          await repo.save(newEvolution)
         }
 
         return resolve()
       } catch (error) {
-        console.error("Error on checking current database version: " + error)
+        console.error('Error on checking current database version: ' + error)
         return resolve()
       }
-    })
-  }
-
-  private connectToMongoDb() {
-    mongoose.connect(this.mongoDbUri, {
-      autoIndex: process.env.AUTO_INDEX === "true" || !RapDvApp.isProduction(),
     })
   }
 }

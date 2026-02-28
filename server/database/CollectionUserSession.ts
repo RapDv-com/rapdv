@@ -1,164 +1,167 @@
 // Copyright (C) Konrad Gadzinowski
 
-import { Database } from "./Database"
-import mongoose, { Schema } from "mongoose"
-import { Collection } from "./Collection"
-import { Tasks } from "../tasks/Tasks"
+import 'reflect-metadata'
+import { Column, Entity, LessThan, ManyToOne } from 'typeorm'
+import { RapDvBaseEntity } from './RapDvBaseEntity'
+import { User } from './CollectionUser'
+import { Collection } from './Collection'
+import { Tasks } from '../tasks/Tasks'
+
+@Entity('user_sessions')
+export class UserSession extends RapDvBaseEntity {
+  @ManyToOne(() => User, { nullable: true })
+  user: User
+
+  @Column({ nullable: true })
+  userId: string
+
+  @Column({ unique: true, nullable: true })
+  sessionId: string
+
+  @Column({ nullable: true })
+  ip: string
+
+  @Column({ nullable: true })
+  userAgent: string
+
+  @Column({ nullable: true, type: 'timestamptz' })
+  expiresDate: Date
+
+  isValid(): boolean {
+    return this.expiresDate?.getTime() > Date.now()
+  }
+}
 
 export class CollectionUserSession extends Collection {
-  
   public static DEFAULT_USER_EXPERIATION_TIME_MS = 365 * 24 * 60 * 60 * 1000 // 1yr
   public static DEFAULT_GUEST_EXPERIATION_TIME_MS = 30 * 60 * 1000 // 30min
   private static REMOVE_EXPIRED_SESSIONS_EVERY_MS: number = 86400000 // 24h
-  private static REMOVE_EXPIRED_SESSIONS_TIMER_KEY = "REMOVE_EXPIRED_SESSIONS"
+  private static REMOVE_EXPIRED_SESSIONS_TIMER_KEY = 'REMOVE_EXPIRED_SESSIONS'
 
   constructor() {
-    super(
-      "UserSession",
-      {
-        user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-        sessionId: { type: String, unique: true },
-        ip: String,
-        userAgent: String,
-        expiresDate: Date
-      },
-      [{
-        user: "text",
-        sessionId: "text"
-      }],
-      (schema: Schema): Schema => {
-        schema.methods.isValid = function () {
-          let expiriesTime = this.expiresDate.getTime() - Date.now()
-          if (expiriesTime < 0) return false
-          return true
-        }
-        return schema
-      }
-    )
+    super('UserSession', UserSession)
   }
 
   public static createUserSession = async (user: any, sessionId: string, ip: string, userAgent: string): Promise<any> => {
-    const self = this
-
-    // Remove previous session if exists
     await CollectionUserSession.removeSession(sessionId)
 
-    // Create new session
-    const collectionUserSession = Collection.get("UserSession") as CollectionUserSession
-    let UserSession = collectionUserSession.model
-    let expiresDate = new Date(new Date().getTime() + self.DEFAULT_USER_EXPERIATION_TIME_MS)
+    const collectionUserSession = Collection.get('UserSession') as CollectionUserSession
+    let expiresDate = new Date(new Date().getTime() + CollectionUserSession.DEFAULT_USER_EXPERIATION_TIME_MS)
+    const userId = user && (user._id || user.id) ? (user._id || user.id).toString() : user?.toString()
 
-    let newInstance = new UserSession({
-      user,
+    const newInstance = collectionUserSession.repository.create({
+      userId,
       sessionId,
       ip,
       userAgent,
-      expiresDate
+      expiresDate,
     })
 
-    await newInstance.save()
-    
+    await collectionUserSession.repository.save(newInstance)
     return newInstance
   }
 
   public static findSessions = async (user: any): Promise<any> => {
     if (!user) return null
-    const collectionUserSession = Collection.get("UserSession") as CollectionUserSession
+    const collectionUserSession = Collection.get('UserSession') as CollectionUserSession
 
     try {
-      let result = await collectionUserSession.model
-        .find({ user: Database.getEntryId(user) })
-        .sort({ timestamp: 1 })
-        .exec()
+      const userId = user && (user._id || user.id) ? (user._id || user.id).toString() : user?.toString()
+      let result = await collectionUserSession.repository.find({
+        where: { userId },
+        order: { createdAt: 'ASC' },
+      })
       return result
     } catch (error) {
-      console.warn("Couldn't complete CollectionUserSession.findSessions. " + error)
+      console.warn('Couldn\'t complete CollectionUserSession.findSessions. ' + error)
       return null
     }
   }
 
   public static findUserSession = async (user: any, sessionId: string): Promise<any> => {
     if (!user) return null
-    const collectionUserSession = Collection.get("UserSession") as CollectionUserSession
+    const collectionUserSession = Collection.get('UserSession') as CollectionUserSession
 
     try {
-      let result = await collectionUserSession.model.findOne({ user, sessionId }).sort({ timestamp: 1 }).exec()
+      const userId = user && (user._id || user.id) ? (user._id || user.id).toString() : user?.toString()
+      let result = await collectionUserSession.repository.findOne({
+        where: { userId, sessionId },
+        order: { createdAt: 'ASC' },
+      })
       return result
     } catch (error) {
-      console.warn("Couldn't complete CollectionUserSession.findUserSession. " + error)
+      console.warn('Couldn\'t complete CollectionUserSession.findUserSession. ' + error)
       return null
     }
   }
 
   public static findSession = async (sessionId: string): Promise<any> => {
     if (!sessionId) return null
-    const collectionUserSession = Collection.get("UserSession") as CollectionUserSession
+    const collectionUserSession = Collection.get('UserSession') as CollectionUserSession
 
     try {
-      let result = await collectionUserSession.model.findOne({ sessionId }).sort({ timestamp: 1 }).exec()
+      let result = await collectionUserSession.repository.findOne({
+        where: { sessionId },
+        order: { createdAt: 'ASC' },
+      })
       return result
     } catch (error) {
-      console.warn("Couldn't complete CollectionUserSession.findSession. " + error)
+      console.warn('Couldn\'t complete CollectionUserSession.findSession. ' + error)
       return null
     }
   }
 
   public static removeUserSession = async (user: any, sessionId: string) => {
     if (!user) return null
-    const collectionUserSession = Collection.get("UserSession") as CollectionUserSession
+    const collectionUserSession = Collection.get('UserSession') as CollectionUserSession
 
     try {
-      let result = await collectionUserSession.model.deleteMany({
-        user,
-        sessionId
-      })
+      const userId = user && (user._id || user.id) ? (user._id || user.id).toString() : user?.toString()
+      let result = await collectionUserSession.repository.delete({ userId, sessionId })
       return result
     } catch (error) {
-      console.warn("Couldn't complete CollectionUserSession.removeUserSession. " + error)
+      console.warn('Couldn\'t complete CollectionUserSession.removeUserSession. ' + error)
       return null
     }
   }
 
   public static removeSession = async (sessionId: string) => {
     if (!sessionId) return null
-    const collectionUserSession = Collection.get("UserSession") as CollectionUserSession
+    const collectionUserSession = Collection.get('UserSession') as CollectionUserSession
 
     try {
-      let result = await collectionUserSession.model.deleteMany({
-        sessionId
-      })
+      let result = await collectionUserSession.repository.delete({ sessionId })
       return result
     } catch (error) {
-      console.warn("Couldn't complete CollectionUserSession.removeSession. " + error)
+      console.warn('Couldn\'t complete CollectionUserSession.removeSession. ' + error)
       return null
     }
   }
 
   public static removeAllUserSessions = async (user: any) => {
     if (!user) return null
-    const collectionUserSession = Collection.get("UserSession") as CollectionUserSession
+    const collectionUserSession = Collection.get('UserSession') as CollectionUserSession
 
     try {
-      let result = await collectionUserSession.model.deleteMany({
-        user
-      })
+      const userId = user && (user._id || user.id) ? (user._id || user.id).toString() : user?.toString()
+      let result = await collectionUserSession.repository.delete({ userId })
       return result
     } catch (error) {
-      console.warn("Couldn't complete CollectionUserSession.removeAllUserSessions. " + error)
+      console.warn('Couldn\'t complete CollectionUserSession.removeAllUserSessions. ' + error)
       return null
     }
   }
 
   public static removeAllExpiredSessions = async () => {
-    const collectionUserSession = Collection.get("UserSession") as CollectionUserSession
+    const collectionUserSession = Collection.get('UserSession') as CollectionUserSession
 
     try {
-      const result = await collectionUserSession.model.deleteMany({
-        expiresDate: { $lt: new Date() }
+      const result = await collectionUserSession.repository.delete({
+        expiresDate: LessThan(new Date()),
       })
       return result
     } catch (error) {
-      console.warn("Couldn't complete CollectionUserSession.removeAllExpiredSessions. " + error)
+      console.warn('Couldn\'t complete CollectionUserSession.removeAllExpiredSessions. ' + error)
       return null
     }
   }
@@ -168,8 +171,10 @@ export class CollectionUserSession extends Collection {
   }
 
   public static startJobForRemovingAllExpiredSessions() {
-    Tasks.startJob(CollectionUserSession.REMOVE_EXPIRED_SESSIONS_TIMER_KEY,
+    Tasks.startJob(
+      CollectionUserSession.REMOVE_EXPIRED_SESSIONS_TIMER_KEY,
       CollectionUserSession.removeAllExpiredSessions,
-      CollectionUserSession.REMOVE_EXPIRED_SESSIONS_EVERY_MS)
+      CollectionUserSession.REMOVE_EXPIRED_SESSIONS_EVERY_MS
+    )
   }
 }

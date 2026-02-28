@@ -1,19 +1,19 @@
 // Copyright (C) Konrad Gadzinowski
 
-import express from "express"
-import logger from "morgan"
-import cookieParser from "cookie-parser"
-import bodyParser from "body-parser"
-import lusca from "lusca"
-import session from "express-session"
-import flash from "express-flash"
-import MongoStore from "connect-mongo"
-import passport from "passport"
-import mongoose from "mongoose"
-import ReactDOMServer from "react-dom/server"
-import { CollectionUserSession } from "../database/CollectionUserSession"
-import { ReactNode } from "react"
-import { Request } from "./Request"
+import express from 'express'
+import logger from 'morgan'
+import cookieParser from 'cookie-parser'
+import bodyParser from 'body-parser'
+import lusca from 'lusca'
+import session from 'express-session'
+import flash from 'express-flash'
+import connectPgSimple from 'connect-pg-simple'
+import { Pool } from 'pg'
+import passport from 'passport'
+import ReactDOMServer from 'react-dom/server'
+import { CollectionUserSession } from '../database/CollectionUserSession'
+import { ReactNode } from 'react'
+import { Request } from './Request'
 
 export class ServerListener {
   public express = express()
@@ -25,20 +25,24 @@ export class ServerListener {
   }
 
   init = () => {
+    const PgStore = connectPgSimple(session)
+    const pool = new Pool({ connectionString: process.env.DATABASE_URL })
+
     const sessionOptions: any = {
       resave: false,
       saveUninitialized: false,
-      store: MongoStore.create({
-        client: mongoose.connection.getClient(),
+      store: new PgStore({
+        pool,
+        createTableIfMissing: true,
       }),
       secret: process.env.SESSION_SECRET,
       cookie: {
-        maxAge: undefined
-      }
+        maxAge: undefined,
+      },
     }
 
     // view engine setup
-    this.express.use(logger("dev"))
+    this.express.use(logger('dev'))
     this.express.use(bodyParser.urlencoded({ extended: true }))
     this.express.use(cookieParser())
 
@@ -46,31 +50,30 @@ export class ServerListener {
     this.express.use(passport.initialize())
     this.express.use(passport.session())
     this.express.use(flash())
-    this.express.use(lusca.xframe("SAMEORIGIN"))
+    this.express.use(lusca.xframe('SAMEORIGIN'))
     this.express.use(lusca.xssProtection(true))
 
     this.express.use((req: Request, res, next) => {
-      // Set session duration based on login state
       const isLoggedIn = !!req.user
 
       req.session.cookie.maxAge = isLoggedIn
         ? CollectionUserSession.DEFAULT_USER_EXPERIATION_TIME_MS
-        : CollectionUserSession.DEFAULT_GUEST_EXPERIATION_TIME_MS // Prevent session overflow
+        : CollectionUserSession.DEFAULT_GUEST_EXPERIATION_TIME_MS
 
       next()
-    });
+    })
 
-    this.express.use("/client", express.static("./client"))
-    this.express.use("/dist", express.static("./dist"))
+    this.express.use('/client', express.static('./client'))
+    this.express.use('/dist', express.static('./dist'))
   }
 
   renderHtmlView = (res, content?: ReactNode) => {
     try {
-      let contentText = "<!DOCTYPE html>" + ReactDOMServer.renderToStaticMarkup(content)
+      let contentText = '<!DOCTYPE html>' + ReactDOMServer.renderToStaticMarkup(content)
       contentText = contentText.replace(/{{_csrf}}/g, res.locals._csrf)
       res.send(content)
     } catch (error) {
-      console.error("Error on rendering views. " + error)
+      console.error('Error on rendering views. ' + error)
     }
   }
 }
