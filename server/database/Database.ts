@@ -3,7 +3,6 @@
 import 'reflect-metadata'
 import { DataSource } from 'typeorm'
 import { Collection } from './Collection'
-import { CollectionEvolution, Evolution } from './CollectionEvolution'
 
 export enum QueryType {
   Include = 'inlcude',
@@ -98,6 +97,7 @@ export class Database {
     Collection.clearCollections()
 
     // Import built-in entities
+    const { CollectionEvolution, Evolution } = require('./CollectionEvolution')
     const { Log } = require('./CollectionLog')
     const { File } = require('./CollectionFile')
     const { ImageFile } = require('./CollectionImageFile')
@@ -195,6 +195,7 @@ export class Database {
   ): Promise<any> {
     return new Promise<string | void>(async (resolve, reject) => {
       try {
+        const { Evolution } = require('./CollectionEvolution')
         const repo = Database.dataSource.getRepository(Evolution)
         const evolution = await repo.findOne({ where: {}, order: { date: 'DESC' } })
 
