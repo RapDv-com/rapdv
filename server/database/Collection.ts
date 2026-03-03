@@ -121,6 +121,12 @@ export class Collection {
     for (const key in queryData) {
       const value = queryData[key]
 
+      // Map _id alias to the actual primary key column
+      if (key === '_id') {
+        result['id'] = value
+        continue
+      }
+
       // Check if this is a relation field
       if (metadata) {
         const relation = metadata.relations.find((r) => r.propertyName === key)
