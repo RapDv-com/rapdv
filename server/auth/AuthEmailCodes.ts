@@ -154,7 +154,7 @@ export class AuthEmailCodes {
     )
 
     // Update sent time, to allow user to receive it again if email fails
-    user.verificationCodeEmailSentDate = Date.now()
+    user.verificationCodeEmailSentDate = new Date()
     user = await user.save()
 
     return results;
