@@ -451,7 +451,9 @@ export abstract class RapDvApp {
   }
 
   public addCollection = (name: string, entityClass: Function): Collection => {
-    this.appEntities.push(entityClass)
+    if (!this.appEntities.includes(entityClass)) {
+      this.appEntities.push(entityClass)
+    }
     return new Collection(name, entityClass)
   }
 

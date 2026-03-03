@@ -117,7 +117,7 @@ export class Database {
         type: 'postgres',
         entities: allEntities,
         synchronize: true,
-        logging: false,
+        logging: process.env.LOG_DATABASE === "true",
       })
       await Database.dataSource.initialize()
       console.info('pg-mem (in-memory PostgreSQL) connection is open for testing')
@@ -129,7 +129,7 @@ export class Database {
         migrations: ['migrations/*.ts'],
         migrationsRun: false,
         synchronize: false,
-        logging: !isProd,
+        logging: process.env.LOG_DATABASE === "true",
         ssl: isProd ? { rejectUnauthorized: false } : false,
       })
       await Database.dataSource.initialize()

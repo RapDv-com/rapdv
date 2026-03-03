@@ -127,6 +127,7 @@ export class Server {
     Auth.configure()
     await app.initAuth()
     app.init(appExpress, appListener, this.database, cluster.isPrimary)
+    await app.getStorage()
 
     await this.addSetupRoutes(app)
     const pageMetadata = this.addBasicRoutes(app)
