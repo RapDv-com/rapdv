@@ -1,21 +1,26 @@
 // Copyright (C) Konrad Gadzinowski
 
-import mongoose, { HydratedDocument, IndexDefinition, Model, ObjectId, Schema, SchemaDefinition, SortOrder } from "mongoose"
-import { TextUtils } from "../text/TextUtils"
-import { Database } from "./Database"
+import 'reflect-metadata'
+import { EntityMetadata, FindManyOptions, FindOptionsWhere, In, LessThan, MoreThan, Not, Repository } from 'typeorm'
+import { TextUtils } from '../text/TextUtils'
+import { Database } from './Database'
 
 export class Collection {
-  public model: Model<any, any, any, any, any>
+  public entityClass: Function
 
   public static collections = []
+
+  get repository(): Repository<any> {
+    return Database.dataSource.getRepository(this.entityClass)
+  }
 
   public static areEntriesSame = (entryA, entryB) => Collection.getEntryId(entryA) === Collection.getEntryId(entryB)
 
   public static getEntryId(entry): any {
     if (!entry) return null
-    if (entry._id) entry = entry._id
-    entry = entry.toString()
-    return entry
+    if (entry._id) return entry._id.toString()
+    if (entry.id) return entry.id.toString()
+    return entry.toString()
   }
 
   public static getAll = (): Collection[] => Collection.collections
@@ -31,7 +36,7 @@ export class Collection {
     return instance
   }
 
-  public static findEntry = async (collectionName: string, queryData: any, populate?: string[]): Promise<HydratedDocument<any>> => {
+  public static findEntry = async (collectionName: string, queryData: any, populate?: string[]): Promise<any> => {
     const collection = Collection.get(collectionName)
     return collection.findOne(queryData, populate)
   }
@@ -40,13 +45,13 @@ export class Collection {
     const collection = Collection.get(collectionName)
     const entry = await collection.findOne(queryData)
     if (!entry) return false
-    await entry.delete()
+    await entry.remove()
     return true
   }
 
   public static deleteEntries = async (collectionName: string, queryData: any): Promise<boolean> => {
     const collection = Collection.get(collectionName)
-    await collection.model.deleteMany(queryData)
+    await collection.repository.delete(collection.translateQuery(queryData))
     return true
   }
 
@@ -58,213 +63,225 @@ export class Collection {
   public static doesAlreadyExists = (name: string): boolean => !!Collection.collections[name]
 
   public static clearCollections = (): void => {
-    const models: any = mongoose.connection.models
-    for (var model in models) {
-      delete models[model];
-    }
-
-
     Collection.collections = []
   }
 
-  public static countByAggregate = async (collection: any, queryAggregate: Array<any>): Promise<number> => {
-    return new Promise<number>(async (resolve, reject) => {
-      const query = [...queryAggregate]
-      query.push({ $group: { _id: null, count: { $sum: 1 } } })
-      
-      collection.model.aggregate(query, (error, count) => {
-
-        let countNumber = 0
-        if (count && count.length > 0 && count[0].count) {
-          countNumber = parseInt(count[0].count)
-        }
-
-        resolve(countNumber)
-      })
-    })
-  }
-
   public static onError = (title: string, message: string) => {
-    console.error("Error! " + title + ", " + message)
-    const LOG_TYPE_ERROR = "Error"
-    Collection.saveLog("Error! " + title, LOG_TYPE_ERROR, message)
+    console.error('Error! ' + title + ', ' + message)
+    const LOG_TYPE_ERROR = 'Error'
+    Collection.saveLog('Error! ' + title, LOG_TYPE_ERROR, message)
   }
 
   /**
    * This method is here to avoid circular dependency to CollectionLog
    */
-  public static saveLog = async (
-    title: string,
-    type: string,
-    description: string,
-  ): Promise<any> => {
-    const Log = Collection.get("Log").model
-
-    // Create initial company
-    const log = new Log({
-      title,
-      type,
-      description,
-    })
-
-    await log.save()
-    return log
+  public static saveLog = async (title: string, type: string, description: string): Promise<any> => {
+    try {
+      const logCollection = Collection.collections['Log']
+      if (!logCollection) return null
+      const log = logCollection.repository.create({ title, type, description })
+      await logCollection.repository.save(log)
+      return log
+    } catch (e) {
+      console.error('Couldn\'t save log: ' + e)
+      return null
+    }
   }
 
   private name: string
 
-  constructor(name: string, schema: SchemaDefinition, indexes?: IndexDefinition[], modifySchema?: (schema: Schema) => Schema) {
+  constructor(name: string, entityClass: Function) {
     this.name = name
+    this.entityClass = entityClass
 
     if (Collection.doesAlreadyExists(name)) {
-      throw "Collection already exists!"
+      throw 'Collection already exists!'
     }
-
-    let collection = new Schema(schema, { timestamps: true })
-    if (!!indexes && indexes.length > 0) {
-      for (const index of indexes) {
-        collection.index(index)
-      }
-    }
-    if (!!modifySchema) collection = modifySchema(collection)
-
-    const model = mongoose.model(name, collection)
-    this.model = model
 
     Collection.set(name, this)
-
-    const collectionKeys = Object.keys(Collection.collections)
   }
 
   public getName = (): string => this.name
 
-  public findOne = async (queryData: any, populate?: string[], sort?: any): Promise<HydratedDocument<any>> => {
+  public translateQuery = (queryData: any): FindOptionsWhere<any> => {
+    if (!queryData) return {}
+
+    let result: any = {}
+
+    // Get entity metadata for relation detection
+    let metadata: EntityMetadata | null = null
     try {
-      let query = this.model.findOne(queryData)
-      if (!!populate) {
-        for (const populateName of populate) {
-          query = query.populate(populateName)
+      if (Database.dataSource && Database.dataSource.isInitialized) {
+        metadata = Database.dataSource.getMetadata(this.entityClass)
+      }
+    } catch (e) {
+      // metadata not available
+    }
+
+    for (const key in queryData) {
+      const value = queryData[key]
+
+      // Map _id alias to the actual primary key column
+      if (key === '_id') {
+        result['id'] = value
+        continue
+      }
+
+      // Check if this is a relation field
+      if (metadata) {
+        const relation = metadata.relations.find((r) => r.propertyName === key)
+        if (relation) {
+          const idKey = key + 'Id'
+          if (value === null || value === undefined) {
+            result[idKey] = null
+          } else if (value && typeof value === 'object' && (value._id || value.id)) {
+            result[idKey] = (value._id || value.id).toString()
+          } else {
+            result[idKey] = value.toString()
+          }
+          continue
         }
       }
-      const sortOrder = sort ? sort : Database.SORT_OLDEST_FIRST
-      let result = await query.sort(sortOrder).exec()
+
+      if (value === null || value === undefined) {
+        result[key] = value
+      } else if (typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date)) {
+        if (value.$lt !== undefined) result[key] = LessThan(value.$lt)
+        else if (value.$gt !== undefined) result[key] = MoreThan(value.$gt)
+        else if (value.$in !== undefined) result[key] = In(value.$in)
+        else if (value.$ne !== undefined) result[key] = Not(value.$ne)
+        else result[key] = value
+      } else {
+        result[key] = value
+      }
+    }
+
+    return result
+  }
+
+  private translateSort = (sort: any): any => {
+    if (!sort) return { createdAt: 'DESC' }
+
+    let result: any = {}
+    for (const key in sort) {
+      result[key] = sort[key] === -1 || sort[key] === 'DESC' ? 'DESC' : 'ASC'
+    }
+    return result
+  }
+
+  public findOne = async (queryData: any, populate?: string[], sort?: any): Promise<any> => {
+    try {
+      const where = this.translateQuery(queryData)
+      const order = sort ? this.translateSort(sort) : { createdAt: 'ASC' }
+      const result = await this.repository.findOne({
+        where,
+        relations: populate,
+        order,
+      })
       return result
     } catch (error) {
-      console.warn("Couldn't complete Collection.findOne. " + error)
+      console.warn('Couldn\'t complete Collection.findOne. ' + error)
       return null
     }
   }
 
-  public findLast = async (queryData: any, populate?: string[]): Promise<HydratedDocument<any>> => {
+  public findLast = async (queryData: any, populate?: string[]): Promise<any> => {
     try {
-      let query = this.model.findOne(queryData)
-      if (!!populate) {
-        for (const populateName of populate) {
-          query = query.populate(populateName)
-        }
-      }
-      let result = await query.sort({ createdAt: -1 }).exec()
+      const where = this.translateQuery(queryData)
+      const result = await this.repository.findOne({
+        where,
+        relations: populate,
+        order: { createdAt: 'DESC' },
+      })
       return result
     } catch (error) {
-      console.warn("Couldn't complete Collection.findLast. " + error)
+      console.warn('Couldn\'t complete Collection.findLast. ' + error)
       return null
     }
   }
 
-  public findOldest = async (queryData: any, populate?: string[]): Promise<HydratedDocument<any>> => {
+  public findOldest = async (queryData: any, populate?: string[]): Promise<any> => {
     try {
-      let query = this.model.findOne(queryData)
-      if (!!populate) {
-        for (const populateName of populate) {
-          query = query.populate(populateName)
-        }
-      }
-      let result = await query.sort({ createdAt: 1 }).exec()
+      const where = this.translateQuery(queryData)
+      const result = await this.repository.findOne({
+        where,
+        relations: populate,
+        order: { createdAt: 'ASC' },
+      })
       return result
     } catch (error) {
-      console.warn("Couldn't complete Collection.findOldest. " + error)
+      console.warn('Couldn\'t complete Collection.findOldest. ' + error)
       return null
     }
   }
 
-  public create = (): HydratedDocument<any> => {
-    return new this.model()
+  public create = (): any => {
+    return this.repository.create()
   }
 
-  public findOneOrCreate = async (queryData: any, populate?: string[]): Promise<HydratedDocument<any>> => {
+  public findOneOrCreate = async (queryData: any, populate?: string[]): Promise<any> => {
     const existing = await this.findOne(queryData, populate)
     if (!!existing) return existing
-    return new this.model(queryData)
+    const entity = this.repository.create()
+    Object.assign(entity, queryData)
+    return entity
   }
 
-  public findById = async (id: ObjectId | string, populate?: string[]): Promise<HydratedDocument<any>> => {
+  public findById = async (id: any, populate?: string[]): Promise<any> => {
     if (!id) return null
 
     try {
-      let query = this.model.findOne({ _id: id.toString() })
-      if (!!populate) {
-        for (const populateName of populate) {
-          query = query.populate(populateName)
-        }
-      }
-      let result = await query.sort({ createdAt: 1 }).exec()
+      const idStr = id._id ? id._id.toString() : id.toString()
+      const result = await this.repository.findOne({
+        where: { id: idStr },
+        relations: populate,
+      })
       return result
     } catch (error) {
-      console.warn("Couldn't complete Collection.findById. " + error)
+      console.warn('Couldn\'t complete Collection.findById. ' + error)
       return null
     }
   }
 
-  public findAll = async (queryData?: any, from?: number, limit?: number, populate?: string[], sort?: any): Promise<HydratedDocument<any>[]> => {
+  public findAll = async (queryData?: any, from?: number, limit?: number, populate?: string[], sort?: any): Promise<any[]> => {
     try {
-      let query = this.model.find(queryData)
-      if (from !== undefined) {
-        query = query.skip(from)
-      }
-      if (limit !== undefined && limit > 0) {
-        query = query.limit(limit)
-      }
-      if (sort !== undefined) {
-        query = query.sort(sort)
-      } else {
-        query = query.sort({ createdAt: -1 })
-      }
-      if (!!populate) {
-        for (const populateName of populate) {
-          query = query.populate(populateName)
-        }
-      }
-      const result = await query.exec()
+      const where = queryData ? this.translateQuery(queryData) : {}
+      const order = sort ? this.translateSort(sort) : { createdAt: 'DESC' }
+
+      const options: FindManyOptions = { where, order, relations: populate }
+      if (from !== undefined) options.skip = from
+      if (limit !== undefined && limit > 0) options.take = limit
+
+      const result = await this.repository.find(options)
       return result
     } catch (error) {
-      console.warn("Couldn't complete Collection.findAll. " + error)
+      console.warn('Couldn\'t complete Collection.findAll. ' + error)
       return null
     }
   }
 
   public count = async (queryData?: any): Promise<number> => {
     try {
-      let result = await this.model.find(queryData).count()
+      const where = queryData ? this.translateQuery(queryData) : {}
+      const result = await this.repository.count({ where })
       return result
     } catch (error) {
-      console.warn("Couldn't complete Collection.findAll. " + error)
+      console.warn('Couldn\'t complete Collection.count. ' + error)
       return null
     }
   }
 
-  public save = async (data: any): Promise<HydratedDocument<any>> => {
+  public save = async (data: any): Promise<any> => {
     let entry
-    if (!data._id) {
-      // New entry
-      const Entry = this.model
-      entry = new Entry(data)
+    if (!data._id && !data.id) {
+      entry = this.repository.create(data)
     } else {
-      // Update data
-      entry = await this.findById(data._id)
+      const id = data._id || data.id
+      entry = await this.findById(id)
       if (!entry) {
         Collection.onError(
-          `Couldn't update entry in ${this.model.collection.name}`,
-          `Couldn't update entry in ${this.model.collection.name} with ID: ${data._id}. This item doesn't exist.`
+          `Couldn't update entry in ${this.name}`,
+          `Couldn't update entry in ${this.name} with ID: ${id}. This item doesn't exist.`
         )
         return
       }
@@ -274,14 +291,14 @@ export class Collection {
       }
     }
 
-    await entry.save()
+    await this.repository.save(entry)
     return entry
   }
 
   public generateKey = async (
     currentId: string | null,
     name: string,
-    findDuplicateByKey: (key: string) => Promise<HydratedDocument<any>>,
+    findDuplicateByKey: (key: string) => Promise<any>,
     dontReplaceCharacters: boolean = false
   ): Promise<string> => {
     let key: any = name.toLowerCase()
@@ -289,12 +306,11 @@ export class Collection {
     key = TextUtils.toKebabCase(key, true)
 
     if (!dontReplaceCharacters) {
-      key = key.replace(/[.,;:\s]/g, "-").replace(/[^A-Z0-9\-_]/gi, "_")
+      key = key.replace(/[.,;:\s]/g, '-').replace(/[^A-Z0-9\-_]/gi, '_')
     }
 
     if (currentId) currentId = currentId.toString()
 
-    // Check for already existing entry with this key
     try {
       let isDuplicate = true
       while (isDuplicate) {
@@ -308,7 +324,7 @@ export class Collection {
         key = key.toString()
       }
     } catch (exception) {
-      Collection.onError("Couldn't check if entry with key exists", "Couldn't check if there is already entry with this key. " + exception)
+      Collection.onError('Couldn\'t check if entry with key exists', 'Couldn\'t check if there is already entry with this key. ' + exception)
     }
 
     return key

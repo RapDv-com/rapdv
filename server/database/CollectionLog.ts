@@ -1,73 +1,74 @@
 // Copyright (C) Konrad Gadzinowski
 
-import { Schema } from "mongoose"
-import { Collection } from "./Collection"
+import 'reflect-metadata'
+import { Column, Entity } from 'typeorm'
+import { RapDvBaseEntity } from './RapDvBaseEntity'
+import { Collection } from './Collection'
 
 export enum LogType {
-  EmailSent = "EmailSent",
-  Error = "Error",
-  RecurringJobStarted = "RecurringJobStarted",
+  EmailSent = 'EmailSent',
+  Error = 'Error',
+  RecurringJobStarted = 'RecurringJobStarted',
+}
+
+@Entity('logs')
+export class Log extends RapDvBaseEntity {
+  @Column({ nullable: true, type: 'text' })
+  title: string
+
+  @Column({ nullable: true })
+  type: string
+
+  @Column({ nullable: true, type: 'text' })
+  description: string
 }
 
 export class CollectionLog extends Collection {
-
   constructor() {
-    super(
-      "Log",
-      {
-        title: String,
-        type: String,
-        description: String,
-      },
-      undefined,
-      (schema: Schema): Schema => {
-        return schema
-      }
-    )
+    super('Log', Log)
   }
 
-  public static create = async (
-    title: string,
-    type: LogType,
-    description: string,
-  ): Promise<any> => Collection.saveLog(title, type, description)
+  public static create = async (title: string, type: LogType, description: string): Promise<any> =>
+    Collection.saveLog(title, type, description)
 
   public findAllLogs = async (from: number, limit: number, filter: string, type: string = null): Promise<Array<any>> => {
     try {
-      let result = await this.getFindQuery(filter, type).skip(from).limit(limit).sort({ eventDate: -1, updatedAt: -1 }).exec()
+      const qb = this.buildLogQuery(filter, type)
+      const result = await qb.orderBy('log.updatedAt', 'DESC').skip(from).take(limit).getMany()
       return result
     } catch (error) {
-      console.warn("Couldn't complete CollectionLog.findAll. " + error)
+      console.warn('Couldn\'t complete CollectionLog.findAllLogs. ' + error)
       return null
     }
   }
 
   public count = async (filter: string, type: string = null): Promise<number> => {
     try {
-      let result = await this.getFindQuery(filter, type).count()
+      const qb = this.buildLogQuery(filter, type)
+      const result = await qb.getCount()
       return result
     } catch (error) {
-      console.warn("Couldn't complete CollectionLog.count. " + error)
+      console.warn('Couldn\'t complete CollectionLog.count. ' + error)
       return null
     }
   }
 
-  private getFindQuery = (filter: string, type: string = null) => {
-    let query = this.model.find(this.getRegexQuery(filter))
+  private buildLogQuery = (filter: string, type: string = null) => {
+    let qb = this.repository.createQueryBuilder('log')
 
-    if (!!type) {
-      query = query.where("type").eq(type)
+    const hasFilter = filter && filter.length > 0
+    const hasType = !!type
+
+    if (hasFilter && hasType) {
+      qb = qb
+        .where('(log.title ILIKE :filter OR log.type ILIKE :filter OR log.description ILIKE :filter)', { filter: `%${filter}%` })
+        .andWhere('log.type = :type', { type })
+    } else if (hasFilter) {
+      qb = qb.where('(log.title ILIKE :filter OR log.type ILIKE :filter OR log.description ILIKE :filter)', { filter: `%${filter}%` })
+    } else if (hasType) {
+      qb = qb.where('log.type = :type', { type })
     }
 
-    return query
-  }
-
-  private getRegexQuery = (filter) => {
-    if (!filter || filter.length == 0) return {}
-
-    let regex = new RegExp(filter, "i")
-    return {
-      $or: [{ title: regex }, { type: regex }, { descriptionHtmlShort: regex }, { descriptionHtmlFull: regex }]
-    }
+    return qb
   }
 }

@@ -116,7 +116,8 @@ export class Server {
 
     const app = this.getApp()
     this.database = app.createDatabase()
-    await this.database.init(process.env.MONGODB_URI, this.isProduction)
+    const customEntities = await app.getEntities()
+    await this.database.init(process.env.DATABASE_URL, this.isProduction, customEntities)
 
     await this.database.initDatabaseContent(app.getRoles(), app.getCustomUserProps() ?? {})
     const appListener = new ServerListener(this.isProduction)

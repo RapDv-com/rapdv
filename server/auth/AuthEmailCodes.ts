@@ -2,7 +2,6 @@
 
 import { CollectionUser, UserRole, UserStatus } from "../database/CollectionUser"
 import { Request } from "../server/Request"
-import { HydratedDocument } from "mongoose"
 import { Collection } from "../database/Collection"
 import { CheckEmail, EmailExistance } from "../mailer/CheckEmail";
 import { Auth } from "./Auth"
@@ -48,7 +47,7 @@ export class AuthEmailCodes {
     firstName?: string,
     lastName?: string,
     role?: UserRole | string
-  ): Promise<HydratedDocument<any>> {
+  ): Promise<any> {
     const self = this
     return new Promise<void>(async (resolve, reject) => {
       if (AuthEmailCodes.isEmailBanned(email)) {
@@ -155,7 +154,7 @@ export class AuthEmailCodes {
     )
 
     // Update sent time, to allow user to receive it again if email fails
-    user.verificationCodeEmailSentDate = Date.now()
+    user.verificationCodeEmailSentDate = new Date()
     user = await user.save()
 
     return results;

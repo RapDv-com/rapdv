@@ -1,7 +1,6 @@
 // Copyright (C) Konrad Gadzinowski
 
 import { Response } from "express"
-import { HydratedDocument } from "mongoose"
 import { Collection } from "../database/Collection"
 import { CollectionFile } from "../database/CollectionFile"
 import { HttpStatus } from "../network/HttpStatus"
@@ -19,7 +18,7 @@ export class Files {
     this.downloadFile(file, res)
   }
 
-  public static downloadFile = async (file: HydratedDocument<any>, res: Response) => {
+  public static downloadFile = async (file: any, res: Response) => {
     if (!file) {
       res.status(HttpStatus.NOT_FOUND)
       res.send("Couldn't find file. ")
