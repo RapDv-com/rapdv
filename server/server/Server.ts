@@ -116,8 +116,8 @@ export class Server {
 
     const app = this.getApp()
     this.database = app.createDatabase()
-    const customEntities = await app.getEntities()
-    await this.database.init(process.env.DATABASE_URL, this.isProduction, customEntities)
+    await app.getStorage()
+    await this.database.init(process.env.DATABASE_URL, this.isProduction, app.appEntities)
 
     await this.database.initDatabaseContent(app.getRoles(), app.getCustomUserProps() ?? {})
     const appListener = new ServerListener(this.isProduction)
@@ -127,7 +127,6 @@ export class Server {
     Auth.configure()
     await app.initAuth()
     app.init(appExpress, appListener, this.database, cluster.isPrimary)
-    await app.getStorage()
 
     await this.addSetupRoutes(app)
     const pageMetadata = this.addBasicRoutes(app)

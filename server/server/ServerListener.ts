@@ -58,7 +58,7 @@ export class ServerListener {
 
       req.session.cookie.maxAge = isLoggedIn
         ? CollectionUserSession.DEFAULT_USER_EXPERIATION_TIME_MS
-        : CollectionUserSession.DEFAULT_GUEST_EXPERIATION_TIME_MS
+        : CollectionUserSession.DEFAULT_GUEST_EXPERIATION_TIME_MS // Prevent session overflow
 
       next()
     })

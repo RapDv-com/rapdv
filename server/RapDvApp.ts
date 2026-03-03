@@ -64,12 +64,13 @@ export abstract class RapDvApp {
   }>
   public abstract initAuth: () => Promise<void>
   public abstract getStorage: () => Promise<void>
-  public abstract getEntities: () => Promise<Function[]>
   public abstract startRecurringTasks: (mailer: Mailer) => Promise<void>
   public abstract addDatabaseEvolutions: () => Promise<void>
 
   protected MAX_FILES = 5
   protected MAX_FILE_SIZE_KB = 5120
+
+  public appEntities: Function[] = []
 
   protected router: Express | any
   protected listener: ServerListener
@@ -450,6 +451,7 @@ export abstract class RapDvApp {
   }
 
   public addCollection = (name: string, entityClass: Function): Collection => {
+    this.appEntities.push(entityClass)
     return new Collection(name, entityClass)
   }
 

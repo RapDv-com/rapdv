@@ -93,7 +93,7 @@ export class Database {
     return key
   }
 
-  public init = async (databaseUrl: string, isProd: boolean, customEntities: Function[] = []) => {
+  public init = async (databaseUrl: string, isProd: boolean, appEntities: Function[] = []) => {
     Collection.clearCollections()
 
     // Import built-in entities
@@ -106,7 +106,7 @@ export class Database {
     const { UserSession } = require('./CollectionUserSession')
 
     const builtInEntities = [Evolution, Log, File, ImageFile, System, User, UserSession]
-    const allEntities = [...builtInEntities, ...customEntities]
+    const allEntities = [...builtInEntities, ...appEntities]
 
     if (!databaseUrl || (!databaseUrl.startsWith('postgresql') && !databaseUrl.startsWith('postgres'))) {
       // Test mode: use pg-mem
