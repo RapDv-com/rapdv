@@ -109,8 +109,6 @@ export class MockedApp extends RapDvApp {
     this.addCollection("Comment", MockComment)
   }
 
-  public getEntities = async () => [MockPost, MockComment]
-
   public startRecurringTasks = async (mailer: Mailer) => {
     // Nothing to start
   }
