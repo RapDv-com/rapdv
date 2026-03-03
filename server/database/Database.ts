@@ -3,6 +3,8 @@
 import 'reflect-metadata'
 import { DataSource } from 'typeorm'
 import { Collection } from './Collection'
+import * as fs from 'fs'
+import * as path from 'path'
 
 export enum QueryType {
   Include = 'inlcude',
@@ -97,7 +99,6 @@ export class Database {
     Collection.clearCollections()
 
     // Import built-in entities
-    const { CollectionEvolution, Evolution } = require('./CollectionEvolution')
     const { Log } = require('./CollectionLog')
     const { File } = require('./CollectionFile')
     const { ImageFile } = require('./CollectionImageFile')
@@ -105,7 +106,7 @@ export class Database {
     const { User } = require('./CollectionUser')
     const { UserSession } = require('./CollectionUserSession')
 
-    const builtInEntities = [Evolution, Log, File, ImageFile, System, User, UserSession]
+    const builtInEntities = [Log, File, ImageFile, System, User, UserSession]
     const allEntities = [...builtInEntities, ...appEntities]
 
     if (!databaseUrl || (!databaseUrl.startsWith('postgresql') && !databaseUrl.startsWith('postgres'))) {
@@ -126,18 +127,15 @@ export class Database {
         type: 'postgres',
         url: databaseUrl,
         entities: allEntities,
-        migrations: ['migrations/*.ts'],
-        migrationsRun: false,
         synchronize: false,
         logging: process.env.LOG_DATABASE === "true",
         ssl: isProd ? { rejectUnauthorized: false } : false,
       })
       await Database.dataSource.initialize()
       console.info('PostgreSQL connection is open')
-    }
 
-    // Init evolution collection
-    new CollectionEvolution()
+      await Database.runSqlMigrations()
+    }
 
     // Handle graceful shutdown
     const onClose = async () => {
@@ -169,6 +167,102 @@ export class Database {
     new CollectionUserSession()
   }
 
+  private static parseMigrationSql(content: string): { up: string, down: string } {
+    const upMarker = '-- UP'
+    const downMarker = '-- DOWN'
+
+    const upIndex = content.indexOf(upMarker)
+    const downIndex = content.indexOf(downMarker)
+
+    if (upIndex === -1) {
+      throw new Error('Migration file must contain a "-- UP" section')
+    }
+
+    if (downIndex === -1) {
+      throw new Error('Migration file must contain a "-- DOWN" section')
+    }
+
+    const up = content.substring(upIndex + upMarker.length, downIndex).trim()
+    const down = content.substring(downIndex + downMarker.length).trim()
+
+    return { up, down }
+  }
+
+  private static getMigrationsDir(): string {
+    return path.resolve(process.cwd(), 'migrations')
+  }
+
+  private static async ensureMigrationsTable(queryRunner) {
+    await queryRunner.query(`CREATE TABLE IF NOT EXISTS "migrations" ("id" SERIAL PRIMARY KEY, "name" character varying NOT NULL, "executedAt" TIMESTAMP NOT NULL DEFAULT now())`)
+  }
+
+  private static async runSqlMigrations() {
+    const queryRunner = Database.dataSource.createQueryRunner()
+    try {
+      await Database.ensureMigrationsTable(queryRunner)
+
+      const migrationsDir = Database.getMigrationsDir()
+      if (!fs.existsSync(migrationsDir)) return
+
+      const sqlFiles = fs.readdirSync(migrationsDir)
+        .filter(f => f.endsWith('.sql'))
+        .sort()
+
+      const executed: { name: string }[] = await queryRunner.query(`SELECT "name" FROM "migrations"`)
+      const executedNames = new Set(executed.map(r => r.name))
+
+      for (const file of sqlFiles) {
+        if (executedNames.has(file)) continue
+
+        const content = fs.readFileSync(path.join(migrationsDir, file), 'utf-8')
+        const { up } = Database.parseMigrationSql(content)
+        if (!up) continue
+
+        console.info(`Running migration: ${file}`)
+        await queryRunner.query(up)
+        await queryRunner.query(`INSERT INTO "migrations" ("name") VALUES ($1)`, [file])
+        console.info(`Migration applied: ${file}`)
+      }
+    } finally {
+      await queryRunner.release()
+    }
+  }
+
+  public static async rollbackLastMigration() {
+    const queryRunner = Database.dataSource.createQueryRunner()
+    try {
+      await Database.ensureMigrationsTable(queryRunner)
+
+      const result: { id: number, name: string }[] = await queryRunner.query(`SELECT "id", "name" FROM "migrations" ORDER BY "id" DESC LIMIT 1`)
+      if (result.length === 0) {
+        console.info('No migrations to roll back')
+        return
+      }
+
+      const { id, name } = result[0]
+      const migrationsDir = Database.getMigrationsDir()
+      const filePath = path.join(migrationsDir, name)
+
+      if (!fs.existsSync(filePath)) {
+        throw new Error(`Migration file not found: ${name}`)
+      }
+
+      const content = fs.readFileSync(filePath, 'utf-8')
+      const { down } = Database.parseMigrationSql(content)
+
+      if (!down) {
+        throw new Error(`Migration ${name} has an empty DOWN section`)
+      }
+
+      console.info(`Rolling back migration: ${name}`)
+      await queryRunner.query(down)
+      await queryRunner.query(`DELETE FROM "migrations" WHERE "id" = $1`, [id])
+      console.info(`Migration rolled back: ${name}`)
+    } finally {
+      await queryRunner.release()
+    }
+  }
+
   public static clearCache() {
     if (!!process.send) {
       process.send({
@@ -188,48 +282,4 @@ export class Database {
     })
   }
 
-  public updateDbVersion(
-    newVersion: number,
-    description: string,
-    onDbVersionChangedCallback: (currentVersion: number) => Promise<any>
-  ): Promise<any> {
-    return new Promise<string | void>(async (resolve, reject) => {
-      try {
-        const { Evolution } = require('./CollectionEvolution')
-        const repo = Database.dataSource.getRepository(Evolution)
-        const evolution = await repo.findOne({ where: {}, order: { date: 'DESC' } })
-
-        let dbVersionChanged: boolean = false
-
-        if (!evolution) {
-          dbVersionChanged = true
-          console.info('Initial database created. Scheme ver.: ' + newVersion)
-          await onDbVersionChangedCallback(newVersion)
-        } else {
-          let currentVersion: number = evolution.number
-          if (currentVersion < newVersion) {
-            dbVersionChanged = true
-            console.info('Database version changed: ' + currentVersion + ' -> ' + newVersion)
-            console.info('Starting migration...')
-            await onDbVersionChangedCallback(currentVersion)
-            console.info('Migration was successful!')
-          }
-        }
-
-        if (dbVersionChanged) {
-          const newEvolution = repo.create({
-            number: newVersion,
-            comments: description,
-            date: new Date(),
-          })
-          await repo.save(newEvolution)
-        }
-
-        return resolve()
-      } catch (error) {
-        console.error('Error on checking current database version: ' + error)
-        return resolve()
-      }
-    })
-  }
 }

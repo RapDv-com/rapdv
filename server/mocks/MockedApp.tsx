@@ -125,7 +125,4 @@ export class MockedApp extends RapDvApp {
     // Nothing to start
   }
 
-  public addDatabaseEvolutions = async () => {
-    await this.addDbEvolution(1, "Initial database version", async (currentVersion: number) => {})
-  }
 }

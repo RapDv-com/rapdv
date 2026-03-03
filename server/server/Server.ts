@@ -105,7 +105,6 @@ export class Server {
       if (!this.app) {
         await this.setupApp()
       }
-      await this.app.addDatabaseEvolutions()
       this.app.startAllRecurringTasks()
     }
   }

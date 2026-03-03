@@ -65,7 +65,6 @@ export abstract class RapDvApp {
   public abstract initAuth: () => Promise<void>
   public abstract getStorage: () => Promise<void>
   public abstract startRecurringTasks: (mailer: Mailer) => Promise<void>
-  public abstract addDatabaseEvolutions: () => Promise<void>
 
   protected MAX_FILES = 5
   protected MAX_FILE_SIZE_KB = 5120
@@ -455,14 +454,6 @@ export abstract class RapDvApp {
       this.appEntities.push(entityClass)
     }
     return new Collection(name, entityClass)
-  }
-
-  public addDbEvolution = (
-    newVersion: number,
-    description: string,
-    onDbVersionChangedCallback: (currentVersion: number) => Promise<any>
-  ): Promise<any> => {
-    return this.database.updateDbVersion(newVersion, description, onDbVersionChangedCallback)
   }
 
   public getProtocol = (req: Request): string => {
