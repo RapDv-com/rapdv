@@ -1,7 +1,8 @@
 // Copyright (C) Konrad Gadzinowski
 
 import 'reflect-metadata'
-import { Column, Entity } from 'typeorm'
+import { Column, DataType, Table } from 'sequelize-typescript'
+import { Op } from 'sequelize'
 import { RapDvBaseEntity } from './RapDvBaseEntity'
 import { Collection } from './Collection'
 
@@ -11,15 +12,15 @@ export enum LogType {
   RecurringJobStarted = 'RecurringJobStarted',
 }
 
-@Entity('logs')
+@Table({ tableName: 'logs', timestamps: true })
 export class Log extends RapDvBaseEntity {
-  @Column({ nullable: true, type: 'text' })
+  @Column({ allowNull: true, type: DataType.TEXT })
   title: string
 
-  @Column({ nullable: true })
+  @Column({ allowNull: true })
   type: string
 
-  @Column({ nullable: true, type: 'text' })
+  @Column({ allowNull: true, type: DataType.TEXT })
   description: string
 }
 
@@ -33,8 +34,13 @@ export class CollectionLog extends Collection {
 
   public findAllLogs = async (from: number, limit: number, filter: string, type: string = null): Promise<Array<any>> => {
     try {
-      const qb = this.buildLogQuery(filter, type)
-      const result = await qb.orderBy('log.updatedAt', 'DESC').skip(from).take(limit).getMany()
+      const where = this.buildLogWhere(filter, type)
+      const result = await Log.findAll({
+        where,
+        order: [['updatedAt', 'DESC']],
+        offset: from,
+        limit,
+      })
       return result
     } catch (error) {
       console.warn('Couldn\'t complete CollectionLog.findAllLogs. ' + error)
@@ -44,8 +50,8 @@ export class CollectionLog extends Collection {
 
   public count = async (filter: string, type: string = null): Promise<number> => {
     try {
-      const qb = this.buildLogQuery(filter, type)
-      const result = await qb.getCount()
+      const where = this.buildLogWhere(filter, type)
+      const result = await Log.count({ where })
       return result
     } catch (error) {
       console.warn('Couldn\'t complete CollectionLog.count. ' + error)
@@ -53,22 +59,27 @@ export class CollectionLog extends Collection {
     }
   }
 
-  private buildLogQuery = (filter: string, type: string = null) => {
-    let qb = this.repository.createQueryBuilder('log')
-
+  private buildLogWhere = (filter: string, type: string = null): any => {
     const hasFilter = filter && filter.length > 0
     const hasType = !!type
+    const conditions: any[] = []
 
-    if (hasFilter && hasType) {
-      qb = qb
-        .where('(log.title ILIKE :filter OR log.type ILIKE :filter OR log.description ILIKE :filter)', { filter: `%${filter}%` })
-        .andWhere('log.type = :type', { type })
-    } else if (hasFilter) {
-      qb = qb.where('(log.title ILIKE :filter OR log.type ILIKE :filter OR log.description ILIKE :filter)', { filter: `%${filter}%` })
-    } else if (hasType) {
-      qb = qb.where('log.type = :type', { type })
+    if (hasFilter) {
+      conditions.push({
+        [Op.or]: [
+          { title: { [Op.iLike]: `%${filter}%` } },
+          { type: { [Op.iLike]: `%${filter}%` } },
+          { description: { [Op.iLike]: `%${filter}%` } },
+        ],
+      })
     }
 
-    return qb
+    if (hasType) {
+      conditions.push({ type })
+    }
+
+    if (conditions.length === 0) return {}
+    if (conditions.length === 1) return conditions[0]
+    return { [Op.and]: conditions }
   }
 }

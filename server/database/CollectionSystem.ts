@@ -1,13 +1,13 @@
 // Copyright (C) Konrad Gadzinowski
 
 import 'reflect-metadata'
-import { Column, Entity } from 'typeorm'
+import { Column, Table } from 'sequelize-typescript'
 import { RapDvBaseEntity } from './RapDvBaseEntity'
 import { Collection } from './Collection'
 
-@Entity('systems')
+@Table({ tableName: 'systems', timestamps: true })
 export class System extends RapDvBaseEntity {
-  @Column({ nullable: true })
+  @Column({ allowNull: true })
   isSetupFinished: boolean
 }
 

@@ -1,23 +1,29 @@
 // Copyright (C) Konrad Gadzinowski
 
 import 'reflect-metadata'
-import { BaseEntity, CreateDateColumn, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
+import { Column, CreatedAt, DataType, Default, Model, PrimaryKey, UpdatedAt } from 'sequelize-typescript'
 
-export abstract class RapDvBaseEntity extends BaseEntity {
-  @PrimaryGeneratedColumn('uuid')
+export abstract class RapDvBaseEntity extends Model {
+  @PrimaryKey
+  @Default(DataType.UUIDV4)
+  @Column(DataType.UUID)
   id: string
 
   get _id(): string {
     return this.id
   }
 
-  @CreateDateColumn()
+  @CreatedAt
   createdAt: Date
 
-  @UpdateDateColumn()
+  @UpdatedAt
   updatedAt: Date
 
   toObject(): any {
-    return { ...this }
+    return this.get({ plain: true })
+  }
+
+  async remove(): Promise<void> {
+    await this.destroy()
   }
 }

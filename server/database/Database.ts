@@ -1,7 +1,7 @@
 // Copyright (C) Konrad Gadzinowski
 
 import 'reflect-metadata'
-import { DataSource } from 'typeorm'
+import { Sequelize } from 'sequelize-typescript'
 import { Collection } from './Collection'
 import * as fs from 'fs'
 import * as path from 'path'
@@ -13,7 +13,7 @@ export enum QueryType {
 }
 
 export class Database {
-  public static dataSource: DataSource
+  public static sequelize: Sequelize
   public static isTest: boolean = false
 
   public static IGNORE_NUMBER: number = -1
@@ -114,24 +114,27 @@ export class Database {
       Database.isTest = true
       const { newDb } = require('pg-mem')
       const db = newDb()
-      Database.dataSource = db.adapters.createTypeormDataSource({
-        type: 'postgres',
-        entities: allEntities,
-        synchronize: true,
-        logging: process.env.LOG_DATABASE === "true",
+      const pgMem = db.adapters.createPg()
+      Database.sequelize = new Sequelize({
+        dialect: 'postgres',
+        dialectModule: pgMem,
+        database: 'test',
+        username: 'test',
+        password: 'test',
+        host: 'localhost',
+        models: allEntities as any,
+        logging: process.env.LOG_DATABASE === 'true' ? console.log : false,
       })
-      await Database.dataSource.initialize()
+      await Database.sequelize.sync({ force: true })
       console.info('pg-mem (in-memory PostgreSQL) connection is open for testing')
     } else {
-      Database.dataSource = new DataSource({
-        type: 'postgres',
-        url: databaseUrl,
-        entities: allEntities,
-        synchronize: false,
-        logging: process.env.LOG_DATABASE === "true",
-        ssl: isProd ? { rejectUnauthorized: false } : false,
+      Database.sequelize = new Sequelize(databaseUrl, {
+        dialect: 'postgres',
+        models: allEntities as any,
+        logging: process.env.LOG_DATABASE === 'true' ? console.log : false,
+        dialectOptions: isProd ? { ssl: { rejectUnauthorized: false } } : {},
       })
-      await Database.dataSource.initialize()
+      await Database.sequelize.authenticate()
       console.info('PostgreSQL connection is open')
 
       await Database.runSqlMigrations()
@@ -139,8 +142,8 @@ export class Database {
 
     // Handle graceful shutdown
     const onClose = async () => {
-      if (Database.dataSource && Database.dataSource.isInitialized) {
-        await Database.dataSource.destroy()
+      if (Database.sequelize) {
+        await Database.sequelize.close()
         console.info('PostgreSQL connection closed')
       }
       process.exit(0)
@@ -192,14 +195,13 @@ export class Database {
     return path.resolve(process.cwd(), 'migrations')
   }
 
-  private static async ensureMigrationsTable(queryRunner) {
-    await queryRunner.query(`CREATE TABLE IF NOT EXISTS "migrations" ("id" SERIAL PRIMARY KEY, "name" character varying NOT NULL, "executedAt" TIMESTAMP NOT NULL DEFAULT now())`)
+  private static async ensureMigrationsTable() {
+    await Database.sequelize.query(`CREATE TABLE IF NOT EXISTS "migrations" ("id" SERIAL PRIMARY KEY, "name" character varying NOT NULL, "executedAt" TIMESTAMP NOT NULL DEFAULT now())`)
   }
 
   private static async runSqlMigrations() {
-    const queryRunner = Database.dataSource.createQueryRunner()
     try {
-      await Database.ensureMigrationsTable(queryRunner)
+      await Database.ensureMigrationsTable()
 
       const migrationsDir = Database.getMigrationsDir()
       if (!fs.existsSync(migrationsDir)) return
@@ -208,8 +210,8 @@ export class Database {
         .filter(f => f.endsWith('.sql'))
         .sort()
 
-      const executed: { name: string }[] = await queryRunner.query(`SELECT "name" FROM "migrations"`)
-      const executedNames = new Set(executed.map(r => r.name))
+      const executed: any[] = await Database.sequelize.query(`SELECT "name" FROM "migrations"`, { plain: false, raw: true, type: 'SELECT' as any })
+      const executedNames = new Set((executed as any[]).map(r => r.name))
 
       for (const file of sqlFiles) {
         if (executedNames.has(file)) continue
@@ -219,22 +221,22 @@ export class Database {
         if (!up) continue
 
         console.info(`Running migration: ${file}`)
-        await queryRunner.query(up)
-        await queryRunner.query(`INSERT INTO "migrations" ("name") VALUES ($1)`, [file])
+        await Database.sequelize.query(up)
+        await Database.sequelize.query(`INSERT INTO "migrations" ("name") VALUES ($1)`, { bind: [file] })
         console.info(`Migration applied: ${file}`)
       }
-    } finally {
-      await queryRunner.release()
+    } catch (error) {
+      console.error('Migration error:', error)
+      throw error
     }
   }
 
   public static async rollbackLastMigration() {
-    const queryRunner = Database.dataSource.createQueryRunner()
     try {
-      await Database.ensureMigrationsTable(queryRunner)
+      await Database.ensureMigrationsTable()
 
-      const result: { id: number, name: string }[] = await queryRunner.query(`SELECT "id", "name" FROM "migrations" ORDER BY "id" DESC LIMIT 1`)
-      if (result.length === 0) {
+      const result: any[] = await Database.sequelize.query(`SELECT "id", "name" FROM "migrations" ORDER BY "id" DESC LIMIT 1`, { plain: false, raw: true, type: 'SELECT' as any })
+      if (!result || result.length === 0) {
         console.info('No migrations to roll back')
         return
       }
@@ -255,11 +257,12 @@ export class Database {
       }
 
       console.info(`Rolling back migration: ${name}`)
-      await queryRunner.query(down)
-      await queryRunner.query(`DELETE FROM "migrations" WHERE "id" = $1`, [id])
+      await Database.sequelize.query(down)
+      await Database.sequelize.query(`DELETE FROM "migrations" WHERE "id" = $1`, { bind: [id] })
       console.info(`Migration rolled back: ${name}`)
-    } finally {
-      await queryRunner.release()
+    } catch (error) {
+      console.error('Rollback error:', error)
+      throw error
     }
   }
 

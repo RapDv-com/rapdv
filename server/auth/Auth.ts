@@ -140,7 +140,7 @@ export class Auth {
 
         const user = !!req?.user ? await CollectionUser.findUserById(req.user._id) : undefined
         if (user) {
-          user.verificationEmailSentDate = new Date(0) // Allow to log in again instantly
+          user.verificationCodeEmailSentDate = new Date(0) // Allow to log in again instantly
           await user?.save()
         }
       }

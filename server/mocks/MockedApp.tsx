@@ -16,29 +16,28 @@ import { NavDropdown } from "..//ui/NavDropdown"
 import { RapDvApp } from "../RapDvApp"
 import { Mailer } from "../mailer/Mailer"
 import { Response } from "express"
-import { Column, Entity, ManyToOne } from "typeorm"
+import { BelongsTo, Column, DataType, ForeignKey, Table, Unique } from "sequelize-typescript"
 import { RapDvBaseEntity } from "../database/RapDvBaseEntity"
 import { User } from "../database/CollectionUser"
 
-@Entity('mock_posts')
+@Table({ tableName: 'mock_posts', timestamps: true })
 class MockPost extends RapDvBaseEntity {
-  @Column({ unique: true, nullable: true }) key: string
-  @Column({ nullable: true, type: 'text' }) title: string
-  @Column({ nullable: true, type: 'text' }) description: string
-  @Column({ nullable: true, type: 'text' }) content: string
-  @Column({ nullable: true, type: 'timestamptz' }) publishedDate: Date
+  @Unique @Column({ allowNull: true }) key: string
+  @Column({ allowNull: true, type: DataType.TEXT }) title: string
+  @Column({ allowNull: true, type: DataType.TEXT }) description: string
+  @Column({ allowNull: true, type: DataType.TEXT }) content: string
+  @Column({ allowNull: true, type: DataType.DATE }) publishedDate: Date
 }
 
-@Entity('mock_comments')
+@Table({ tableName: 'mock_comments', timestamps: true })
 class MockComment extends RapDvBaseEntity {
-  @Column({ nullable: true, type: 'text' }) content: string
-  @ManyToOne(() => MockPost, { nullable: true }) post: MockPost
-  @Column({ nullable: true }) postId: string
-  @ManyToOne(() => User, { nullable: true }) author: User
-  @Column({ nullable: true }) authorId: string
-  @Column({ nullable: true, type: 'timestamptz' }) publishedDate: Date
+  @Column({ allowNull: true, type: DataType.TEXT }) content: string
+  @ForeignKey(() => MockPost) @Column({ allowNull: true, type: DataType.UUID }) postId: string
+  @BelongsTo(() => MockPost) post: MockPost
+  @ForeignKey(() => User) @Column({ allowNull: true, type: DataType.UUID }) authorId: string
+  @BelongsTo(() => User) author: User
+  @Column({ allowNull: true, type: DataType.DATE }) publishedDate: Date
 }
->>>>>>> origin/dev-postgres
 
 export class MockedApp extends RapDvApp {
   getBasicInfo = () => ({

@@ -1,17 +1,86 @@
 // Copyright (C) Konrad Gadzinowski
 
 import 'reflect-metadata'
-import { EntityMetadata, FindManyOptions, FindOptionsWhere, In, LessThan, MoreThan, Not, Repository } from 'typeorm'
+import { Op } from 'sequelize'
 import { TextUtils } from '../text/TextUtils'
 import { Database } from './Database'
+
+// SequelizeRepositoryAdapter — provides a TypeORM-like repository API over Sequelize models
+class SequelizeRepositoryAdapter {
+  constructor(private modelClass: any) {}
+
+  private translateOrder(order: any): any[] {
+    if (!order) return [['createdAt', 'DESC']]
+    return Object.entries(order).map(([k, v]) => [k, v])
+  }
+
+  private translateOptions(opts: any): any {
+    const seqOpts: any = {}
+
+    if (opts.where) seqOpts.where = opts.where
+
+    if (opts.order) {
+      seqOpts.order = this.translateOrder(opts.order)
+    }
+
+    if (opts.relations?.length) {
+      seqOpts.include = opts.relations.map((rel: string) => {
+        const assoc = this.modelClass.associations?.[rel]
+        if (assoc) return { model: assoc.target, as: rel }
+        return rel
+      })
+    }
+
+    if (opts.skip !== undefined) seqOpts.offset = opts.skip
+    if (opts.take !== undefined) seqOpts.limit = opts.take
+
+    return seqOpts
+  }
+
+  create(data?: any) {
+    return this.modelClass.build(data || {})
+  }
+
+  async save(entity: any) {
+    return entity.save()
+  }
+
+  async find(opts: any = {}) {
+    return this.modelClass.findAll(this.translateOptions(opts))
+  }
+
+  async findOne(opts: any = {}) {
+    return this.modelClass.findOne(this.translateOptions(opts))
+  }
+
+  async delete(where: any) {
+    return this.modelClass.destroy({ where })
+  }
+
+  async remove(entity: any) {
+    return entity.destroy()
+  }
+
+  async count(opts: any = {}) {
+    const seqOpts: any = {}
+    if (opts.where) seqOpts.where = opts.where
+    return this.modelClass.count(seqOpts)
+  }
+
+  // Retained for backward compatibility — collection files that still use it
+  // will need to be rewritten; this throws a helpful error to catch any missed ones.
+  createQueryBuilder(alias: string): never {
+    throw new Error(`createQueryBuilder('${alias}') is not supported with Sequelize. Rewrite the query using Op.iLike / Op.or.`)
+  }
+}
 
 export class Collection {
   public entityClass: Function
 
   public static collections = []
 
-  get repository(): Repository<any> {
-    return Database.dataSource.getRepository(this.entityClass)
+  get repository(): SequelizeRepositoryAdapter {
+    return new SequelizeRepositoryAdapter(this.entityClass)
   }
 
   public static areEntriesSame = (entryA, entryB) => Collection.getEntryId(entryA) === Collection.getEntryId(entryB)
@@ -103,20 +172,13 @@ export class Collection {
 
   public getName = (): string => this.name
 
-  public translateQuery = (queryData: any): FindOptionsWhere<any> => {
+  public translateQuery = (queryData: any): any => {
     if (!queryData) return {}
 
     let result: any = {}
 
-    // Get entity metadata for relation detection
-    let metadata: EntityMetadata | null = null
-    try {
-      if (Database.dataSource && Database.dataSource.isInitialized) {
-        metadata = Database.dataSource.getMetadata(this.entityClass)
-      }
-    } catch (e) {
-      // metadata not available
-    }
+    // Get entity associations for relation detection
+    const associations: any = (this.entityClass as any).associations || {}
 
     for (const key in queryData) {
       const value = queryData[key]
@@ -127,29 +189,27 @@ export class Collection {
         continue
       }
 
-      // Check if this is a relation field
-      if (metadata) {
-        const relation = metadata.relations.find((r) => r.propertyName === key)
-        if (relation) {
-          const idKey = key + 'Id'
-          if (value === null || value === undefined) {
-            result[idKey] = null
-          } else if (value && typeof value === 'object' && (value._id || value.id)) {
-            result[idKey] = (value._id || value.id).toString()
-          } else {
-            result[idKey] = value.toString()
-          }
-          continue
+      // Check if this is a relation field (association)
+      if (associations[key]) {
+        const assoc = associations[key]
+        const idKey = assoc.foreignKey || (key + 'Id')
+        if (value === null || value === undefined) {
+          result[idKey] = null
+        } else if (value && typeof value === 'object' && (value._id || value.id)) {
+          result[idKey] = (value._id || value.id).toString()
+        } else {
+          result[idKey] = value.toString()
         }
+        continue
       }
 
       if (value === null || value === undefined) {
         result[key] = value
       } else if (typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date)) {
-        if (value.$lt !== undefined) result[key] = LessThan(value.$lt)
-        else if (value.$gt !== undefined) result[key] = MoreThan(value.$gt)
-        else if (value.$in !== undefined) result[key] = In(value.$in)
-        else if (value.$ne !== undefined) result[key] = Not(value.$ne)
+        if (value.$lt !== undefined) result[key] = { [Op.lt]: value.$lt }
+        else if (value.$gt !== undefined) result[key] = { [Op.gt]: value.$gt }
+        else if (value.$in !== undefined) result[key] = { [Op.in]: value.$in }
+        else if (value.$ne !== undefined) result[key] = { [Op.ne]: value.$ne }
         else result[key] = value
       } else {
         result[key] = value
@@ -248,7 +308,7 @@ export class Collection {
       const where = queryData ? this.translateQuery(queryData) : {}
       const order = sort ? this.translateSort(sort) : { createdAt: 'DESC' }
 
-      const options: FindManyOptions = { where, order, relations: populate }
+      const options: any = { where, order, relations: populate }
       if (from !== undefined) options.skip = from
       if (limit !== undefined && limit > 0) options.take = limit
 

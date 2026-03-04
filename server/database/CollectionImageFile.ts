@@ -1,33 +1,35 @@
 // Copyright (C) Konrad Gadzinowski
 
 import 'reflect-metadata'
-import { Column, Entity, ManyToOne } from 'typeorm'
+import { BelongsTo, Column, DataType, ForeignKey, Table, Unique } from 'sequelize-typescript'
+import { Op } from 'sequelize'
 import { RapDvBaseEntity } from './RapDvBaseEntity'
 import { CollectionFile, File, FileStorageType } from './CollectionFile'
 import { CollectionLog, LogType } from './CollectionLog'
 import { HttpStatus } from '../network/HttpStatus'
-import { Database } from './Database'
 import fs from 'fs'
 import mime from 'mime'
 import request from 'request'
 import { Collection } from './Collection'
 import { Tasks } from '../tasks/Tasks'
 
-@Entity('image_files')
+@Table({ tableName: 'image_files', timestamps: true })
 export class ImageFile extends RapDvBaseEntity {
-  @Column({ unique: true, nullable: true })
+  @Unique
+  @Column({ allowNull: true })
   key: string
 
-  @Column({ nullable: true })
+  @Column({ allowNull: true })
   nameDisplayed: string
 
-  @ManyToOne(() => File, { nullable: true, eager: true })
-  file: File
-
-  @Column({ nullable: true })
+  @ForeignKey(() => File)
+  @Column({ allowNull: true, type: DataType.UUID })
   fileId: string
 
-  @Column({ default: false })
+  @BelongsTo(() => File)
+  file: File
+
+  @Column({ defaultValue: false })
   isPublic: boolean
 
   async removeWithFile(): Promise<any> {
@@ -59,10 +61,12 @@ export class ImageFile extends RapDvBaseEntity {
     for (const collectionKey in allCollections) {
       const collection = allCollections[collectionKey]
       try {
-        const metadata = Database.dataSource.getMetadata(collection.entityClass)
-        for (const relation of metadata.relations) {
-          if (relation.inverseEntityMetadata.target === ImageFile) {
-            const idColumn = relation.propertyName + 'Id'
+        const entityClass = collection.entityClass as any
+        const associations = entityClass.associations || {}
+        for (const assocName in associations) {
+          const assoc = associations[assocName]
+          if (assoc.target === ImageFile) {
+            const idColumn = assoc.foreignKey || (assocName + 'Id')
             const query: any = {}
             query[idColumn] = this.id
             const count = await collection.count(query)
@@ -73,7 +77,7 @@ export class ImageFile extends RapDvBaseEntity {
           }
         }
       } catch (e) {
-        // Skip if metadata not available
+        // Skip if associations not available
       }
     }
 
@@ -196,7 +200,7 @@ export class CollectionImageFile extends Collection {
     let photoUrl = defaultUrl
     if (!!imageId) {
       const collectionImageFile = Collection.get('ImageFile') as CollectionImageFile
-      let photo = await collectionImageFile.findById(imageId)
+      let photo = await collectionImageFile.findById(imageId, ['file'])
       if (photo && photo.file) {
         const fileData = await photo.file.loadData()
         if (!!fileData) {
@@ -220,7 +224,10 @@ export class CollectionImageFile extends Collection {
 
   public findAll = async (): Promise<any> => {
     try {
-      let result = await this.repository.find({ relations: ['file'], order: { createdAt: 'ASC' } })
+      let result = await ImageFile.findAll({
+        include: [{ association: 'file' }],
+        order: [['createdAt', 'ASC']],
+      })
       return result
     } catch (error) {
       console.warn('Couldn\'t complete CollectionImageFile.findAll. ' + error)
@@ -246,7 +253,11 @@ export class CollectionImageFile extends Collection {
     if (!key) return null
 
     try {
-      let result = await this.repository.findOne({ where: { key }, relations: ['file'], order: { createdAt: 'ASC' } })
+      let result = await ImageFile.findOne({
+        where: { key },
+        include: [{ association: 'file' }],
+        order: [['createdAt', 'ASC']],
+      })
       return result
     } catch (error) {
       console.warn('Couldn\'t complete CollectionImageFile.findByKey. ' + error)
@@ -254,12 +265,16 @@ export class CollectionImageFile extends Collection {
     }
   }
 
-  public findById = async (id: any): Promise<any> => {
+  public findById = async (id: any, populate?: string[]): Promise<any> => {
     if (!id) return null
 
     try {
       const idStr = id._id ? id._id.toString() : id.toString()
-      let result = await this.repository.findOne({ where: { id: idStr }, relations: ['file'], order: { createdAt: 'ASC' } })
+      let result = await ImageFile.findOne({
+        where: { id: idStr },
+        include: [{ association: 'file' }],
+        order: [['createdAt', 'ASC']],
+      })
       return result
     } catch (error) {
       console.warn('Couldn\'t complete CollectionImageFile.findById. ' + error)
@@ -269,13 +284,21 @@ export class CollectionImageFile extends Collection {
 
   public find = async (filter: string, fromPosition: number, max: number): Promise<any> => {
     try {
-      let qb = this.repository.createQueryBuilder('imageFile')
+      const where: any = filter && filter.length > 0
+        ? {
+            [Op.or]: [
+              { key: { [Op.iLike]: `%${filter}%` } },
+              { nameDisplayed: { [Op.iLike]: `%${filter}%` } },
+            ],
+          }
+        : {}
 
-      if (filter != null && filter.length > 0) {
-        qb = qb.where('(imageFile.key ILIKE :filter OR imageFile.nameDisplayed ILIKE :filter)', { filter: `%${filter}%` })
-      }
-
-      let result = await qb.skip(fromPosition).take(max).orderBy('imageFile.createdAt', 'ASC').getMany()
+      let result = await ImageFile.findAll({
+        where,
+        offset: fromPosition,
+        limit: max,
+        order: [['createdAt', 'ASC']],
+      })
       return result
     } catch (error) {
       console.warn('Couldn\'t complete CollectionImageFile.find. ' + error)
@@ -285,13 +308,16 @@ export class CollectionImageFile extends Collection {
 
   public count = async (filter?: string): Promise<number> => {
     try {
-      let qb = this.repository.createQueryBuilder('imageFile')
+      const where: any = filter && filter.length > 0
+        ? {
+            [Op.or]: [
+              { key: { [Op.iLike]: `%${filter}%` } },
+              { nameDisplayed: { [Op.iLike]: `%${filter}%` } },
+            ],
+          }
+        : {}
 
-      if (filter != null && filter.length > 0) {
-        qb = qb.where('(imageFile.key ILIKE :filter OR imageFile.nameDisplayed ILIKE :filter)', { filter: `%${filter}%` })
-      }
-
-      let result = await qb.getCount()
+      let result = await ImageFile.count({ where })
       return result
     } catch (error) {
       console.warn('Couldn\'t complete CollectionImageFile.count. ' + error)
@@ -381,7 +407,7 @@ export class CollectionImageFile extends Collection {
     console.info('Removing unused images...')
 
     const collectionImageFile = Collection.get(CollectionImageFile.NAME) as CollectionImageFile
-    let allImages = await collectionImageFile.repository.find({ order: { createdAt: 'ASC' } })
+    let allImages = await ImageFile.findAll({ order: [['createdAt', 'ASC']] })
 
     let imagesRemoved = 0
     let imagesKept = 0

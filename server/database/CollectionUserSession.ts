@@ -1,30 +1,33 @@
 // Copyright (C) Konrad Gadzinowski
 
 import 'reflect-metadata'
-import { Column, Entity, LessThan, ManyToOne } from 'typeorm'
+import { BelongsTo, Column, DataType, ForeignKey, Table, Unique } from 'sequelize-typescript'
+import { Op } from 'sequelize'
 import { RapDvBaseEntity } from './RapDvBaseEntity'
 import { User } from './CollectionUser'
 import { Collection } from './Collection'
 import { Tasks } from '../tasks/Tasks'
 
-@Entity('user_sessions')
+@Table({ tableName: 'user_sessions', timestamps: true })
 export class UserSession extends RapDvBaseEntity {
-  @ManyToOne(() => User, { nullable: true })
-  user: User
-
-  @Column({ nullable: true })
+  @ForeignKey(() => User)
+  @Column({ allowNull: true, type: DataType.UUID })
   userId: string
 
-  @Column({ unique: true, nullable: true })
+  @BelongsTo(() => User)
+  user: User
+
+  @Unique
+  @Column({ allowNull: true })
   sessionId: string
 
-  @Column({ nullable: true })
+  @Column({ allowNull: true })
   ip: string
 
-  @Column({ nullable: true })
+  @Column({ allowNull: true })
   userAgent: string
 
-  @Column({ nullable: true, type: 'timestamptz' })
+  @Column({ allowNull: true, type: DataType.DATE })
   expiresDate: Date
 
   isValid(): boolean {
@@ -157,7 +160,7 @@ export class CollectionUserSession extends Collection {
 
     try {
       const result = await collectionUserSession.repository.delete({
-        expiresDate: LessThan(new Date()),
+        expiresDate: { [Op.lt]: new Date() },
       })
       return result
     } catch (error) {

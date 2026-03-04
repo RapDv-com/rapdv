@@ -1,7 +1,7 @@
 // Copyright (C) Konrad Gadzinowski
 
 import 'reflect-metadata'
-import { Column, Entity } from 'typeorm'
+import { Column, DataType, Table, Unique } from 'sequelize-typescript'
 import { RapDvBaseEntity } from './RapDvBaseEntity'
 import { Collection } from './Collection'
 import { Database } from './Database'
@@ -15,36 +15,37 @@ export enum FileStorageType {
   S3 = 'S3',
 }
 
-@Entity('files')
+@Table({ tableName: 'files', timestamps: true })
 export class File extends RapDvBaseEntity {
-  @Column({ unique: true, nullable: true })
+  @Unique
+  @Column({ allowNull: true })
   key: string
 
-  @Column({ default: false })
+  @Column({ defaultValue: false })
   isPublic: boolean
 
-  @Column({ nullable: true, type: 'bytea' })
+  @Column({ allowNull: true, type: DataType.BLOB })
   data: Buffer
 
-  @Column({ nullable: true })
+  @Column({ allowNull: true })
   s3Key: string
 
-  @Column({ nullable: true })
+  @Column({ allowNull: true })
   name: string
 
-  @Column({ nullable: true })
+  @Column({ allowNull: true })
   storageType: string
 
-  @Column({ nullable: true })
+  @Column({ allowNull: true })
   encoding: string
 
-  @Column({ nullable: true })
+  @Column({ allowNull: true })
   mimetype: string
 
-  @Column({ nullable: true, type: 'bigint' })
+  @Column({ allowNull: true, type: DataType.BIGINT })
   size: number
 
-  @Column({ nullable: true })
+  @Column({ allowNull: true })
   md5: string
 
   async removeIfItsNotUsed(): Promise<boolean> {
@@ -53,10 +54,12 @@ export class File extends RapDvBaseEntity {
     for (const collectionKey in allCollections) {
       const collection = allCollections[collectionKey]
       try {
-        const metadata = Database.dataSource.getMetadata(collection.entityClass)
-        for (const relation of metadata.relations) {
-          if (relation.inverseEntityMetadata.target === File) {
-            const idColumn = relation.propertyName + 'Id'
+        const entityClass = collection.entityClass as any
+        const associations = entityClass.associations || {}
+        for (const assocName in associations) {
+          const assoc = associations[assocName]
+          if (assoc.target === File) {
+            const idColumn = assoc.foreignKey || (assocName + 'Id')
             const query: any = {}
             query[idColumn] = this.id
             const count = await collection.count(query)
@@ -66,7 +69,7 @@ export class File extends RapDvBaseEntity {
           }
         }
       } catch (e) {
-        // Skip if metadata not available for this collection
+        // Skip if associations not available for this collection
       }
     }
 

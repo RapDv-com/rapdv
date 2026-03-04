@@ -1,7 +1,8 @@
 // Copyright (C) Konrad Gadzinowski
 
 import 'reflect-metadata'
-import { BeforeInsert, BeforeUpdate, Column, Entity, ManyToOne } from 'typeorm'
+import { BeforeCreate, BeforeUpdate, BelongsTo, Column, DataType, ForeignKey, Table, Unique } from 'sequelize-typescript'
+import { Op } from 'sequelize'
 import { RapDvBaseEntity } from './RapDvBaseEntity'
 import { CollectionImageFile, ImageFile } from './CollectionImageFile'
 import bcrypt from 'bcrypt-nodejs'
@@ -18,60 +19,68 @@ export enum UserStatus {
   Banned = 'Banned',
 }
 
-@Entity('users')
+@Table({ tableName: 'users', timestamps: true })
 export class User extends RapDvBaseEntity {
   private static GIVE_TIME_TO_VERIFY_MS = 7200000 // 2h
 
-  @Column({ unique: true, nullable: true })
+  @Unique
+  @Column({ allowNull: true })
   email: string
 
-  @Column({ default: false })
+  @Column({ defaultValue: false })
   emailVerified: boolean
 
-  @Column({ nullable: true })
+  @Column({ allowNull: true })
   emailVerificationCode: string
 
-  @Column({ nullable: true, type: 'timestamptz' })
+  @Column({ allowNull: true, type: DataType.DATE })
   verificationCodeEmailSentDate: Date
 
-  @Column({ nullable: true })
+  @Column({ allowNull: true })
   password: string
 
-  @Column({ default: 0 })
+  @Column({ defaultValue: 0 })
   failedLoginAttempts: number
 
-  @Column({ nullable: true, type: 'timestamptz' })
+  @Column({ allowNull: true, type: DataType.DATE })
   lastFailedLoginAttempt: Date
 
-  @Column({ type: 'jsonb', default: [] })
+  @Column({ type: DataType.JSONB, defaultValue: [] })
   loginProviders: Array<{ id: string; name: string }>
 
-  @Column({ nullable: true })
+  @Column({ allowNull: true })
   firstName: string
 
-  @Column({ nullable: true })
+  @Column({ allowNull: true })
   lastName: string
 
-  @ManyToOne(() => ImageFile, { nullable: true })
-  photo: ImageFile
-
-  @Column({ nullable: true })
+  @ForeignKey(() => ImageFile)
+  @Column({ allowNull: true, type: DataType.UUID })
   photoId: string
 
-  @Column({ default: UserStatus.Live })
+  @BelongsTo(() => ImageFile)
+  photo: ImageFile
+
+  @Column({ defaultValue: UserStatus.Live })
   status: string
 
-  @Column({ nullable: true, type: 'text' })
+  @Column({ allowNull: true, type: DataType.TEXT })
   notes: string
 
-  @Column({ default: UserRole.User })
+  @Column({ defaultValue: UserRole.User })
   role: string
 
-  @BeforeInsert()
-  @BeforeUpdate()
-  async hashPasswordIfNeeded() {
-    if (this.password && !this.password.startsWith('$2a$') && !this.password.startsWith('$2b$')) {
-      this.password = bcrypt.hashSync(this.password, bcrypt.genSaltSync(10))
+  @BeforeCreate
+  static async hashPasswordBeforeCreate(instance: User) {
+    if (instance.password && !instance.password.startsWith('$2a$') && !instance.password.startsWith('$2b$')) {
+      instance.password = bcrypt.hashSync(instance.password, bcrypt.genSaltSync(10))
+    }
+  }
+
+  @BeforeUpdate
+  static async hashPasswordBeforeUpdate(instance: User) {
+    if (instance.password && !instance.password.startsWith('$2a$') && !instance.password.startsWith('$2b$')) {
+      instance.password = bcrypt.hashSync(instance.password, bcrypt.genSaltSync(10))
     }
   }
 
@@ -250,7 +259,7 @@ export class CollectionUser extends Collection {
   public static findUserByEmail = async (email: string): Promise<any> => {
     try {
       const collectionUser = Collection.get('User') as CollectionUser
-      const result = await collectionUser.repository.findOne({ where: { email }, order: { createdAt: 'ASC' } })
+      const result = await User.findOne({ where: { email }, order: [['createdAt', 'ASC']] })
       return result
     } catch (error) {
       console.warn('Couldn\'t complete CollectionUser.findUserByEmail. ' + error)
@@ -262,9 +271,8 @@ export class CollectionUser extends Collection {
     if (!id) return null
 
     try {
-      const collectionUser = Collection.get('User') as CollectionUser
       const idStr = id._id ? id._id.toString() : id.toString()
-      const result = await collectionUser.repository.findOne({ where: { id: idStr } })
+      const result = await User.findOne({ where: { id: idStr } })
       return result
     } catch (error) {
       console.warn('Couldn\'t complete CollectionUser.findUserById. ' + error)
@@ -274,12 +282,11 @@ export class CollectionUser extends Collection {
 
   public static findUsersByStatus = async (fromPosition: number, usersMax: number, status: UserStatus, newestFirst: boolean = true) => {
     try {
-      const collectionUser = Collection.get('User') as CollectionUser
-      let result = await collectionUser.repository.find({
+      let result = await User.findAll({
         where: { status },
-        skip: fromPosition,
-        take: usersMax,
-        order: { createdAt: newestFirst ? 'DESC' : 'ASC' },
+        offset: fromPosition,
+        limit: usersMax,
+        order: [['createdAt', newestFirst ? 'DESC' : 'ASC']],
       })
       return result
     } catch (error) {
@@ -290,35 +297,42 @@ export class CollectionUser extends Collection {
 
   public static findUsers = async (filter?: string, status?: string, fromPosition?: number, usersMax?: number, userRole?: UserRole): Promise<any> => {
     try {
-      const collectionUser = Collection.get('User') as CollectionUser
-      let qb = collectionUser.repository.createQueryBuilder('user')
+      const where: any = {}
 
       if (!!status && status.toLowerCase() !== 'all' && CollectionUser.isValidStatus(status)) {
-        qb = qb.andWhere('user.status = :status', { status })
+        where.status = status
       }
 
       if (!!userRole) {
-        qb = qb.andWhere('user.role = :role', { role: userRole })
+        where.role = userRole
       }
 
       if (filter != null && filter.length > 0) {
-        qb = qb.andWhere(
-          '(user.firstName ILIKE :filter OR user.lastName ILIKE :filter OR user.email ILIKE :filter OR user.role ILIKE :filter)',
-          { filter: `%${filter}%` }
-        )
+        where[Op.and] = where[Op.and] || []
+        where[Op.and].push({
+          [Op.or]: [
+            { firstName: { [Op.iLike]: `%${filter}%` } },
+            { lastName: { [Op.iLike]: `%${filter}%` } },
+            { email: { [Op.iLike]: `%${filter}%` } },
+            { role: { [Op.iLike]: `%${filter}%` } },
+          ],
+        })
       }
 
-      qb = qb.orderBy('user.createdAt', 'DESC')
+      const options: any = {
+        where,
+        order: [['createdAt', 'DESC']],
+      }
 
       if (fromPosition !== undefined && fromPosition >= 0) {
-        qb = qb.skip(fromPosition)
+        options.offset = fromPosition
       }
 
       if (usersMax !== undefined && usersMax > 0) {
-        qb = qb.take(usersMax)
+        options.limit = usersMax
       }
 
-      const results = await qb.getMany()
+      const results = await User.findAll(options)
       return results
     } catch (error) {
       Collection.onError('Couldn\'t get users', 'Error on getting users. ' + error)
@@ -328,10 +342,9 @@ export class CollectionUser extends Collection {
 
   public static findAllUsersByRole = async (userRole: UserRole): Promise<any> => {
     try {
-      const collectionUser = Collection.get('User') as CollectionUser
-      let result = await collectionUser.repository.find({
+      let result = await User.findAll({
         where: { role: userRole },
-        order: { createdAt: 'DESC' },
+        order: [['createdAt', 'DESC']],
       })
       return result
     } catch (error) {
@@ -342,25 +355,29 @@ export class CollectionUser extends Collection {
 
   public static getAllUsersCount = async (filter?: string, status?: string, userRole?: UserRole): Promise<number> => {
     try {
-      const collectionUser = Collection.get('User') as CollectionUser
-      let qb = collectionUser.repository.createQueryBuilder('user')
+      const where: any = {}
 
       if (!!status && status.toLowerCase() !== 'all' && CollectionUser.isValidStatus(status)) {
-        qb = qb.andWhere('user.status = :status', { status })
+        where.status = status
       }
 
       if (!!userRole) {
-        qb = qb.andWhere('user.role = :role', { role: userRole })
+        where.role = userRole
       }
 
       if (filter != null && filter.length > 0) {
-        qb = qb.andWhere(
-          '(user.firstName ILIKE :filter OR user.lastName ILIKE :filter OR user.email ILIKE :filter OR user.role ILIKE :filter)',
-          { filter: `%${filter}%` }
-        )
+        where[Op.and] = where[Op.and] || []
+        where[Op.and].push({
+          [Op.or]: [
+            { firstName: { [Op.iLike]: `%${filter}%` } },
+            { lastName: { [Op.iLike]: `%${filter}%` } },
+            { email: { [Op.iLike]: `%${filter}%` } },
+            { role: { [Op.iLike]: `%${filter}%` } },
+          ],
+        })
       }
 
-      const count = await qb.getCount()
+      const count = await User.count({ where })
       return count
     } catch (error) {
       console.warn('Couldn\'t complete CollectionUser.getAllUsersCount. ' + error)
