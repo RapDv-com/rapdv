@@ -46,7 +46,17 @@ export class GenerateMigration {
   }
 
   private writeMigrationFile(name: string, content: string): string {
-    const timestamp = Date.now()
+    const now = new Date()
+    const twoDigits = 2
+    const zeroPad = '0'
+    const monthOffset = 1
+    const timestamp =
+      now.getFullYear().toString() +
+      (now.getMonth() + monthOffset).toString().padStart(twoDigits, zeroPad) +
+      now.getDate().toString().padStart(twoDigits, zeroPad) +
+      now.getHours().toString().padStart(twoDigits, zeroPad) +
+      now.getMinutes().toString().padStart(twoDigits, zeroPad) +
+      now.getSeconds().toString().padStart(twoDigits, zeroPad)
     const fileName = `${timestamp}-${name}.sql`
     const migrationsDir = path.resolve(process.cwd(), 'migrations')
     fs.mkdirSync(migrationsDir, { recursive: true })
@@ -54,7 +64,7 @@ export class GenerateMigration {
     return fileName
   }
 
-  public async run(migrationName: string = 'initial'): Promise<void> {
+  public async run(migrationName: string): Promise<void> {
     const builtInModels = this.loadBuiltInModels()
     const appModels = await this.loadAppModels()
     const allModels = [...builtInModels, ...appModels]
@@ -98,7 +108,7 @@ export class GenerateMigration {
   }
 
   public static async main(): Promise<void> {
-    const migrationName = process.argv[2] || 'initial'
+    const migrationName = process.argv[2] || 'Database-change'
     await new GenerateMigration().run(migrationName)
   }
 }
