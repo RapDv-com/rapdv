@@ -1,15 +1,37 @@
 #!/usr/bin/env ts-node
 // Generates a SQL migration from Sequelize model definitions.
 // Uses pg-mem so no real database connection is required.
-// Usage: npx ts-node scripts/GenerateMigration.ts [migration-name]
+// Usage: npx ts-node [path/to/]GenerateMigration.ts [migration-name]
 
 import 'reflect-metadata'
 import { Sequelize } from 'sequelize-typescript'
 import * as fs from 'fs'
 import * as path from 'path'
+import { RapDvApp } from '../../RapDvApp'
 
 export class GenerateMigration {
   private sqlStatements: string[] = []
+
+  private loadBuiltInModels(): any[] {
+    const { Log } = require('../CollectionLog')
+    const { File } = require('../CollectionFile')
+    const { ImageFile } = require('../CollectionImageFile')
+    const { System } = require('../CollectionSystem')
+    const { User } = require('../CollectionUser')
+    const { UserSession } = require('../CollectionUserSession')
+    return [Log, File, ImageFile, System, User, UserSession]
+  }
+
+  private async loadAppModels(): Promise<any[]> {
+    const appPath = path.resolve(process.cwd(), 'server/App')
+    const appModule = require(appPath)
+    const AppClass = appModule.App
+    if (!AppClass) return []
+
+    const app: RapDvApp = new AppClass()
+    await app.getStorage()
+    return app.appEntities as any[]
+  }
 
   private buildUpSection(): string {
     return this.sqlStatements.join(';\n\n') + ';'
@@ -32,7 +54,11 @@ export class GenerateMigration {
     return fileName
   }
 
-  public async run(models: any[], migrationName: string = 'initial'): Promise<void> {
+  public async run(migrationName: string = 'initial'): Promise<void> {
+    const builtInModels = this.loadBuiltInModels()
+    const appModels = await this.loadAppModels()
+    const allModels = [...builtInModels, ...appModels]
+
     const { newDb } = require('pg-mem')
     const db = newDb()
     const pgMem = db.adapters.createPg()
@@ -44,7 +70,7 @@ export class GenerateMigration {
       username: 'test',
       password: 'test',
       host: 'localhost',
-      models: models as any,
+      models: allModels as any,
       logging: (sql: string) => {
         const cleaned = sql.replace(/^Executing \(default\): /, '')
         if (/^\s*CREATE TABLE/i.test(cleaned)) {
@@ -70,4 +96,14 @@ export class GenerateMigration {
     console.log(`Generated: migrations/${fileName}`)
     console.log(`Tables: ${tableNames.join(', ')}`)
   }
+
+  public static async main(): Promise<void> {
+    const migrationName = process.argv[2] || 'initial'
+    await new GenerateMigration().run(migrationName)
+  }
 }
+
+GenerateMigration.main().catch(err => {
+  console.error(err)
+  process.exit(1)
+})
