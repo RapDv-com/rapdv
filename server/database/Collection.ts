@@ -5,7 +5,7 @@ import { Op } from 'sequelize'
 import { TextUtils } from '../text/TextUtils'
 import { Database } from './Database'
 
-// SequelizeRepositoryAdapter — provides a TypeORM-like repository API over Sequelize models
+// SequelizeRepositoryAdapter — provides a repository API over Sequelize models
 class SequelizeRepositoryAdapter {
   constructor(private modelClass: any) {}
 

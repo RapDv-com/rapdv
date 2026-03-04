@@ -13,7 +13,7 @@ Build web applications quickly. [Docs](https://rapdv.com/docs).
 - SCSS
 - React
 - Express
-- PostgreSQL + TypeORM
+- PostgreSQL + Sequelize
 
 ## Front-end technologies:
 - Bootstrap
