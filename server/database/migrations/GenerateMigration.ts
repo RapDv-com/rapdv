@@ -39,10 +39,10 @@ export class GenerateMigration {
 
   private buildDownSection(): string {
     const tableNames = this.sqlStatements
-      .map(s => s.match(/CREATE TABLE IF NOT EXISTS "([^"]+)"/)?.[1])
+      .map(statement => statement.match(/CREATE TABLE IF NOT EXISTS "([^"]+)"/)?.[1])
       .filter(Boolean)
       .reverse()
-    return tableNames.map(t => `DROP TABLE IF EXISTS "${t}" CASCADE`).join(';\n') + ';'
+    return tableNames.map(tableName => `DROP TABLE IF EXISTS "${tableName}" CASCADE`).join(';\n') + ';'
   }
 
   private writeMigrationFile(name: string, content: string): string {
@@ -90,7 +90,7 @@ export class GenerateMigration {
     const fileName = this.writeMigrationFile(migrationName, content)
 
     const tableNames = this.sqlStatements
-      .map(s => s.match(/CREATE TABLE IF NOT EXISTS "([^"]+)"/)?.[1])
+      .map(statement => statement.match(/CREATE TABLE IF NOT EXISTS "([^"]+)"/)?.[1])
       .filter(Boolean)
 
     console.log(`Generated: migrations/${fileName}`)

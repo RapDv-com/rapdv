@@ -47,3 +47,9 @@ server/
 Folders functions:  
 `app` - Consist of main application, server or client. It basically wires all elements together.  
 `elements` - Independent elements.  
+
+### Coding style
+- Every file needs to have name in PascalCase and be a class
+- All code should be writted in an object-oriented way, and all functions should be methods of a class
+- Don't use variables with single letter names, except for loop counters. Use descriptive names for variables and functions.
+- Don't use magic numbers, use constants with descriptive names instead.

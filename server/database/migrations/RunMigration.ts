@@ -53,14 +53,14 @@ export class RunMigration {
       return
     }
 
-    const sqlFiles = fs.readdirSync(migrationsDir).filter(f => f.endsWith('.sql')).sort()
+    const sqlFiles = fs.readdirSync(migrationsDir).filter(fileName => fileName.endsWith('.sql')).sort()
 
     const executed: any[] = await this.sequelize.query(`SELECT "name" FROM "migrations"`, {
       plain: false,
       raw: true,
       type: 'SELECT' as any,
     })
-    const executedNames = new Set((executed as any[]).map(r => r.name))
+    const executedNames = new Set((executed as any[]).map(row => row.name))
 
     let ran = 0
     for (const file of sqlFiles) {
@@ -80,4 +80,13 @@ export class RunMigration {
     if (ran === 0) console.log('No new migrations to run.')
     await this.sequelize.close()
   }
+
+  public static async main(): Promise<void> {
+    await new RunMigration().run()
+  }
 }
+
+RunMigration.main().catch(err => {
+  console.error(err)
+  process.exit(1)
+})
