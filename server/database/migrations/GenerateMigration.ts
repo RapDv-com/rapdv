@@ -5,11 +5,11 @@
 
 import 'reflect-metadata'
 import { Sequelize } from 'sequelize-typescript'
-import * as fs from 'fs'
 import * as path from 'path'
 import { RapDvApp } from '../../RapDvApp'
+import { MigrationBase } from './MigrationBase'
 
-export class GenerateMigration {
+export class GenerateMigration extends MigrationBase {
   private sqlStatements: string[] = []
 
   private loadBuiltInModels(): any[] {
@@ -45,24 +45,6 @@ export class GenerateMigration {
     return tableNames.map(tableName => `DROP TABLE IF EXISTS "${tableName}" CASCADE`).join(';\n') + ';'
   }
 
-  private writeMigrationFile(name: string, content: string): string {
-    const now = new Date()
-    const twoDigits = 2
-    const zeroPad = '0'
-    const monthOffset = 1
-    const timestamp =
-      now.getFullYear().toString() +
-      (now.getMonth() + monthOffset).toString().padStart(twoDigits, zeroPad) +
-      now.getDate().toString().padStart(twoDigits, zeroPad) +
-      now.getHours().toString().padStart(twoDigits, zeroPad) +
-      now.getMinutes().toString().padStart(twoDigits, zeroPad) +
-      now.getSeconds().toString().padStart(twoDigits, zeroPad)
-    const fileName = `${timestamp}-${name}.sql`
-    const migrationsDir = path.resolve(process.cwd(), 'migrations')
-    fs.mkdirSync(migrationsDir, { recursive: true })
-    fs.writeFileSync(path.join(migrationsDir, fileName), content)
-    return fileName
-  }
 
   public async run(migrationName: string): Promise<void> {
     const builtInModels = this.loadBuiltInModels()
@@ -70,8 +52,8 @@ export class GenerateMigration {
     const allModels = [...builtInModels, ...appModels]
 
     const { newDb } = require('pg-mem')
-    const db = newDb()
-    const pgMem = db.adapters.createPg()
+    const memDatabase = newDb()
+    const pgMem = memDatabase.adapters.createPg()
 
     const sequelize = new Sequelize({
       dialect: 'postgres',
@@ -108,12 +90,14 @@ export class GenerateMigration {
   }
 
   public static async main(): Promise<void> {
-    const migrationName = process.argv[2] || 'Database-change'
+    const migrationName = process.argv[MigrationBase.FIRST_CLI_ARG_INDEX] || 'Database-change'
     await new GenerateMigration().run(migrationName)
+  }
+
+  public static handleError(err: Error): void {
+    console.error(err)
+    process.exit(MigrationBase.ERROR_EXIT_CODE)
   }
 }
 
-GenerateMigration.main().catch(err => {
-  console.error(err)
-  process.exit(1)
-})
+GenerateMigration.main().catch(GenerateMigration.handleError)

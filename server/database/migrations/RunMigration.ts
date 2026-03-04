@@ -81,12 +81,16 @@ export class RunMigration {
     await this.sequelize.close()
   }
 
+  private static readonly ERROR_EXIT_CODE = 1
+
   public static async main(): Promise<void> {
     await new RunMigration().run()
   }
+
+  public static handleError(err: Error): void {
+    console.error(err)
+    process.exit(RunMigration.ERROR_EXIT_CODE)
+  }
 }
 
-RunMigration.main().catch(err => {
-  console.error(err)
-  process.exit(1)
-})
+RunMigration.main().catch(RunMigration.handleError)
