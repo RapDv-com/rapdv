@@ -7,8 +7,7 @@ import bodyParser from 'body-parser'
 import lusca from 'lusca'
 import session from 'express-session'
 import flash from 'express-flash'
-import connectPgSimple from 'connect-pg-simple'
-import { Pool } from 'pg'
+import MySQLStore from 'express-mysql-session'
 import passport from 'passport'
 import ReactDOMServer from 'react-dom/server'
 import { CollectionUserSession } from '../database/CollectionUserSession'
@@ -25,16 +24,21 @@ export class ServerListener {
   }
 
   init = () => {
-    const PgStore = connectPgSimple(session)
-    const pool = new Pool({ connectionString: process.env.DATABASE_URL })
+    const dbUrl = new URL(process.env.DATABASE_URL)
+    const SessionStore = MySQLStore(session)
+    const store = new SessionStore({
+      host: dbUrl.hostname,
+      port: parseInt(dbUrl.port) || 3306,
+      user: decodeURIComponent(dbUrl.username),
+      password: decodeURIComponent(dbUrl.password),
+      database: dbUrl.pathname.slice(1),
+      createDatabaseTable: true,
+    })
 
     const sessionOptions: any = {
       resave: false,
       saveUninitialized: false,
-      store: new PgStore({
-        pool,
-        createTableIfMissing: true,
-      }),
+      store,
       secret: process.env.SESSION_SECRET,
       cookie: {
         maxAge: undefined,

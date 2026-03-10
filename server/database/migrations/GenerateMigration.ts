@@ -1,11 +1,12 @@
 #!/usr/bin/env ts-node
 // Generates a SQL migration from Sequelize model definitions.
-// Uses pg-mem so no real database connection is required.
+// Requires a running MariaDB instance via DATABASE_URL.
 // Usage: npx ts-node [path/to/]GenerateMigration.ts [migration-name]
 
 import 'reflect-metadata'
 import { Sequelize } from 'sequelize-typescript'
 import * as path from 'path'
+import dotenv from 'dotenv'
 import { RapDvApp } from '../../RapDvApp'
 import { MigrationBase } from './MigrationBase'
 
@@ -47,21 +48,20 @@ export class GenerateMigration extends MigrationBase {
 
 
   public async run(migrationName: string): Promise<void> {
+    dotenv.config({ path: '.env.example', override: true })
+    dotenv.config({ path: '.env', override: true })
+
+    const databaseUrl = process.env.DATABASE_URL
+    if (!databaseUrl) {
+      throw new Error('DATABASE_URL is required to generate migrations. Set it in your .env file.')
+    }
+
     const builtInModels = this.loadBuiltInModels()
     const appModels = await this.loadAppModels()
     const allModels = [...builtInModels, ...appModels]
 
-    const { newDb } = require('pg-mem')
-    const memDatabase = newDb()
-    const pgMem = memDatabase.adapters.createPg()
-
-    const sequelize = new Sequelize({
-      dialect: 'postgres',
-      dialectModule: pgMem,
-      database: 'test',
-      username: 'test',
-      password: 'test',
-      host: 'localhost',
+    const sequelize = new Sequelize(databaseUrl, {
+      dialect: 'mariadb',
       models: allModels as any,
       logging: (sql: string) => {
         const cleaned = sql.replace(/^Executing \(default\): /, '')

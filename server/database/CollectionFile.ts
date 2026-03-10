@@ -23,7 +23,7 @@ export class File extends RapDvBaseEntity {
   @Column({ defaultValue: false })
   isPublic: boolean
 
-  @Column({ allowNull: true, type: DataType.BLOB })
+  @Column({ allowNull: true, type: DataType.BLOB('long') })
   data: Buffer
 
   @Column({ allowNull: true })

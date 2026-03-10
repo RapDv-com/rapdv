@@ -109,42 +109,22 @@ export class Database {
     const builtInEntities = [Log, File, ImageFile, System, User, UserSession]
     const allEntities = [...builtInEntities, ...appEntities]
 
-    if (!databaseUrl || (!databaseUrl.startsWith('postgresql') && !databaseUrl.startsWith('postgres'))) {
-      // Test mode: use pg-mem
-      Database.isTest = true
-      const { newDb } = require('pg-mem')
-      const db = newDb()
-      const pgMem = db.adapters.createPg()
-      Database.sequelize = new Sequelize({
-        dialect: 'postgres',
-        dialectModule: pgMem,
-        database: 'test',
-        username: 'test',
-        password: 'test',
-        host: 'localhost',
-        models: allEntities as any,
-        logging: process.env.LOG_DATABASE === 'true' ? console.log : false,
-      })
-      await Database.sequelize.sync({ force: true })
-      console.info('pg-mem (in-memory PostgreSQL) connection is open for testing')
-    } else {
-      Database.sequelize = new Sequelize(databaseUrl, {
-        dialect: 'postgres',
-        models: allEntities as any,
-        logging: process.env.LOG_DATABASE === 'true' ? console.log : false,
-        dialectOptions: isProd ? { ssl: { rejectUnauthorized: false } } : {},
-      })
-      await Database.sequelize.authenticate()
-      console.info('PostgreSQL connection is open')
+    Database.sequelize = new Sequelize(databaseUrl, {
+      dialect: 'mariadb',
+      models: allEntities as any,
+      logging: process.env.LOG_DATABASE === 'true' ? console.log : false,
+      dialectOptions: isProd ? { ssl: { rejectUnauthorized: false } } : {},
+    })
+    await Database.sequelize.authenticate()
+    console.info('MariaDB connection is open')
 
-      await Database.runSqlMigrations()
-    }
+    await Database.runSqlMigrations()
 
     // Handle graceful shutdown
     const onClose = async () => {
       if (Database.sequelize) {
         await Database.sequelize.close()
-        console.info('PostgreSQL connection closed')
+        console.info('MariaDB connection closed')
       }
       process.exit(0)
     }
@@ -196,7 +176,7 @@ export class Database {
   }
 
   private static async ensureMigrationsTable() {
-    await Database.sequelize.query(`CREATE TABLE IF NOT EXISTS "migrations" ("id" SERIAL PRIMARY KEY, "name" character varying NOT NULL, "executedAt" TIMESTAMP NOT NULL DEFAULT now())`)
+    await Database.sequelize.query('CREATE TABLE IF NOT EXISTS `migrations` (`id` INT AUTO_INCREMENT PRIMARY KEY, `name` VARCHAR(255) NOT NULL, `executedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP)')
   }
 
   private static async runSqlMigrations() {
@@ -210,7 +190,7 @@ export class Database {
         .filter(f => f.endsWith('.sql'))
         .sort()
 
-      const executed: any[] = await Database.sequelize.query(`SELECT "name" FROM "migrations"`, { plain: false, raw: true, type: 'SELECT' as any })
+      const executed: any[] = await Database.sequelize.query('SELECT `name` FROM `migrations`', { plain: false, raw: true, type: 'SELECT' as any })
       const executedNames = new Set((executed as any[]).map(r => r.name))
 
       for (const file of sqlFiles) {
@@ -222,7 +202,7 @@ export class Database {
 
         console.info(`Running migration: ${file}`)
         await Database.sequelize.query(up)
-        await Database.sequelize.query(`INSERT INTO "migrations" ("name") VALUES ($1)`, { bind: [file] })
+        await Database.sequelize.query('INSERT INTO `migrations` (`name`) VALUES (?)', { replacements: [file] })
         console.info(`Migration applied: ${file}`)
       }
     } catch (error) {
@@ -235,7 +215,7 @@ export class Database {
     try {
       await Database.ensureMigrationsTable()
 
-      const result: any[] = await Database.sequelize.query(`SELECT "id", "name" FROM "migrations" ORDER BY "id" DESC LIMIT 1`, { plain: false, raw: true, type: 'SELECT' as any })
+      const result: any[] = await Database.sequelize.query('SELECT `id`, `name` FROM `migrations` ORDER BY `id` DESC LIMIT 1', { plain: false, raw: true, type: 'SELECT' as any })
       if (!result || result.length === 0) {
         console.info('No migrations to roll back')
         return
@@ -258,7 +238,7 @@ export class Database {
 
       console.info(`Rolling back migration: ${name}`)
       await Database.sequelize.query(down)
-      await Database.sequelize.query(`DELETE FROM "migrations" WHERE "id" = $1`, { bind: [id] })
+      await Database.sequelize.query('DELETE FROM `migrations` WHERE `id` = ?', { replacements: [id] })
       console.info(`Migration rolled back: ${name}`)
     } catch (error) {
       console.error('Rollback error:', error)

@@ -287,8 +287,8 @@ export class CollectionImageFile extends Collection {
       const where: any = filter && filter.length > 0
         ? {
             [Op.or]: [
-              { key: { [Op.iLike]: `%${filter}%` } },
-              { nameDisplayed: { [Op.iLike]: `%${filter}%` } },
+              { key: { [Op.like]: `%${filter}%` } },
+              { nameDisplayed: { [Op.like]: `%${filter}%` } },
             ],
           }
         : {}
@@ -311,8 +311,8 @@ export class CollectionImageFile extends Collection {
       const where: any = filter && filter.length > 0
         ? {
             [Op.or]: [
-              { key: { [Op.iLike]: `%${filter}%` } },
-              { nameDisplayed: { [Op.iLike]: `%${filter}%` } },
+              { key: { [Op.like]: `%${filter}%` } },
+              { nameDisplayed: { [Op.like]: `%${filter}%` } },
             ],
           }
         : {}

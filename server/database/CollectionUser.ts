@@ -45,7 +45,7 @@ export class User extends RapDvBaseEntity {
   @Column({ allowNull: true, type: DataType.DATE })
   lastFailedLoginAttempt: Date
 
-  @Column({ type: DataType.JSONB, defaultValue: [] })
+  @Column({ type: DataType.JSON, defaultValue: [] })
   loginProviders: Array<{ id: string; name: string }>
 
   @Column({ allowNull: true })
@@ -311,10 +311,10 @@ export class CollectionUser extends Collection {
         where[Op.and] = where[Op.and] || []
         where[Op.and].push({
           [Op.or]: [
-            { firstName: { [Op.iLike]: `%${filter}%` } },
-            { lastName: { [Op.iLike]: `%${filter}%` } },
-            { email: { [Op.iLike]: `%${filter}%` } },
-            { role: { [Op.iLike]: `%${filter}%` } },
+            { firstName: { [Op.like]: `%${filter}%` } },
+            { lastName: { [Op.like]: `%${filter}%` } },
+            { email: { [Op.like]: `%${filter}%` } },
+            { role: { [Op.like]: `%${filter}%` } },
           ],
         })
       }
@@ -369,10 +369,10 @@ export class CollectionUser extends Collection {
         where[Op.and] = where[Op.and] || []
         where[Op.and].push({
           [Op.or]: [
-            { firstName: { [Op.iLike]: `%${filter}%` } },
-            { lastName: { [Op.iLike]: `%${filter}%` } },
-            { email: { [Op.iLike]: `%${filter}%` } },
-            { role: { [Op.iLike]: `%${filter}%` } },
+            { firstName: { [Op.like]: `%${filter}%` } },
+            { lastName: { [Op.like]: `%${filter}%` } },
+            { email: { [Op.like]: `%${filter}%` } },
+            { role: { [Op.like]: `%${filter}%` } },
           ],
         })
       }
