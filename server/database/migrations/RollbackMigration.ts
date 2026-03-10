@@ -1,6 +1,6 @@
 #!/usr/bin/env ts-node
 // Rolls back the last applied SQL migration against the database specified by DATABASE_URL.
-// Usage: DATABASE_URL=postgresql://... npx ts-node scripts/RollbackMigration.ts
+// Usage: DATABASE_URL=mariadb://... npx ts-node scripts/RollbackMigration.ts
 
 import 'reflect-metadata'
 import { Sequelize } from 'sequelize-typescript'
@@ -27,20 +27,20 @@ export class RollbackMigration {
 
   public async run(): Promise<void> {
     const databaseUrl = process.env.DATABASE_URL
-    if (!databaseUrl || (!databaseUrl.startsWith('postgresql') && !databaseUrl.startsWith('postgres'))) {
-      throw new Error('DATABASE_URL must be set to a valid PostgreSQL connection string.')
+    if (!databaseUrl) {
+      throw new Error('DATABASE_URL must be set to a valid MariaDB connection string.')
     }
 
     this.sequelize = new Sequelize(databaseUrl, {
-      dialect: 'postgres',
+      dialect: 'mariadb',
       logging: false,
     })
 
     await this.sequelize.authenticate()
-    console.log('Connected to PostgreSQL')
+    console.log('Connected to MariaDB')
 
     const result: any[] = await this.sequelize.query(
-      `SELECT "id", "name" FROM "migrations" ORDER BY "id" DESC LIMIT 1`,
+      'SELECT `id`, `name` FROM `migrations` ORDER BY `id` DESC LIMIT 1',
       { plain: false, raw: true, type: 'SELECT' as any }
     )
 
@@ -68,7 +68,7 @@ export class RollbackMigration {
 
     console.log(`Rolling back migration: ${name}`)
     await this.sequelize.query(down)
-    await this.sequelize.query(`DELETE FROM "migrations" WHERE "id" = $1`, { bind: [id] })
+    await this.sequelize.query('DELETE FROM `migrations` WHERE `id` = ?', { replacements: [id] })
     console.log(`Rolled back: ${name}`)
 
     await this.sequelize.close()

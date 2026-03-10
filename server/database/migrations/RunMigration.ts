@@ -1,6 +1,6 @@
 #!/usr/bin/env ts-node
 // Runs all pending SQL migrations against the database specified by DATABASE_URL.
-// Usage: DATABASE_URL=postgresql://... npx ts-node scripts/RunMigration.ts
+// Usage: DATABASE_URL=mariadb://... npx ts-node scripts/RunMigration.ts
 
 import 'reflect-metadata'
 import { Sequelize } from 'sequelize-typescript'
@@ -27,23 +27,23 @@ export class RunMigration {
 
   private async ensureMigrationsTable(): Promise<void> {
     await this.sequelize.query(
-      `CREATE TABLE IF NOT EXISTS "migrations" ("id" SERIAL PRIMARY KEY, "name" character varying NOT NULL, "executedAt" TIMESTAMP NOT NULL DEFAULT now())`
+      'CREATE TABLE IF NOT EXISTS `migrations` (`id` INT AUTO_INCREMENT PRIMARY KEY, `name` VARCHAR(255) NOT NULL, `executedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP)'
     )
   }
 
   public async run(): Promise<void> {
     const databaseUrl = process.env.DATABASE_URL
-    if (!databaseUrl || (!databaseUrl.startsWith('postgresql') && !databaseUrl.startsWith('postgres'))) {
-      throw new Error('DATABASE_URL must be set to a valid PostgreSQL connection string.')
+    if (!databaseUrl) {
+      throw new Error('DATABASE_URL must be set to a valid MariaDB connection string.')
     }
 
     this.sequelize = new Sequelize(databaseUrl, {
-      dialect: 'postgres',
+      dialect: 'mariadb',
       logging: false,
     })
 
     await this.sequelize.authenticate()
-    console.log('Connected to PostgreSQL')
+    console.log('Connected to MariaDB')
 
     await this.ensureMigrationsTable()
 
@@ -55,7 +55,7 @@ export class RunMigration {
 
     const sqlFiles = fs.readdirSync(migrationsDir).filter(fileName => fileName.endsWith('.sql')).sort()
 
-    const executed: any[] = await this.sequelize.query(`SELECT "name" FROM "migrations"`, {
+    const executed: any[] = await this.sequelize.query('SELECT `name` FROM `migrations`', {
       plain: false,
       raw: true,
       type: 'SELECT' as any,
@@ -72,7 +72,7 @@ export class RunMigration {
 
       console.log(`Running migration: ${file}`)
       await this.sequelize.query(up)
-      await this.sequelize.query(`INSERT INTO "migrations" ("name") VALUES ($1)`, { bind: [file] })
+      await this.sequelize.query('INSERT INTO `migrations` (`name`) VALUES (?)', { replacements: [file] })
       console.log(`Applied: ${file}`)
       ran++
     }
