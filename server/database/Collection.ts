@@ -70,7 +70,7 @@ class SequelizeRepositoryAdapter {
   // Retained for backward compatibility — collection files that still use it
   // will need to be rewritten; this throws a helpful error to catch any missed ones.
   createQueryBuilder(alias: string): never {
-    throw new Error(`createQueryBuilder('${alias}') is not supported with Sequelize. Rewrite the query using Op.iLike / Op.or.`)
+    throw new Error(`createQueryBuilder('${alias}') is not supported with Sequelize. Rewrite the query using Op.like / Op.or.`)
   }
 }
 

@@ -67,9 +67,9 @@ export class CollectionLog extends Collection {
     if (hasFilter) {
       conditions.push({
         [Op.or]: [
-          { title: { [Op.iLike]: `%${filter}%` } },
-          { type: { [Op.iLike]: `%${filter}%` } },
-          { description: { [Op.iLike]: `%${filter}%` } },
+          { title: { [Op.like]: `%${filter}%` } },
+          { type: { [Op.like]: `%${filter}%` } },
+          { description: { [Op.like]: `%${filter}%` } },
         ],
       })
     }
