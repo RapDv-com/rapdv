@@ -71,7 +71,10 @@ export class RunMigration {
       if (!up) continue
 
       console.log(`Running migration: ${file}`)
-      await this.sequelize.query(up)
+      const statements = up.split(';').map(s => s.trim()).filter(s => s.length > 0)
+      for (const statement of statements) {
+        await this.sequelize.query(statement)
+      }
       await this.sequelize.query('INSERT INTO `migrations` (`name`) VALUES (?)', { replacements: [file] })
       console.log(`Applied: ${file}`)
       ran++

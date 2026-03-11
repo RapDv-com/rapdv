@@ -67,7 +67,10 @@ export class RollbackMigration {
     }
 
     console.log(`Rolling back migration: ${name}`)
-    await this.sequelize.query(down)
+    const statements = down.split(';').map(s => s.trim()).filter(s => s.length > 0)
+    for (const statement of statements) {
+      await this.sequelize.query(statement)
+    }
     await this.sequelize.query('DELETE FROM `migrations` WHERE `id` = ?', { replacements: [id] })
     console.log(`Rolled back: ${name}`)
 

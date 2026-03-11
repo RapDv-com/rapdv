@@ -201,7 +201,10 @@ export class Database {
         if (!up) continue
 
         console.info(`Running migration: ${file}`)
-        await Database.sequelize.query(up)
+        const statements = up.split(';').map(s => s.trim()).filter(s => s.length > 0)
+        for (const statement of statements) {
+          await Database.sequelize.query(statement)
+        }
         await Database.sequelize.query('INSERT INTO `migrations` (`name`) VALUES (?)', { replacements: [file] })
         console.info(`Migration applied: ${file}`)
       }
@@ -237,7 +240,10 @@ export class Database {
       }
 
       console.info(`Rolling back migration: ${name}`)
-      await Database.sequelize.query(down)
+      const statements = down.split(';').map(s => s.trim()).filter(s => s.length > 0)
+      for (const statement of statements) {
+        await Database.sequelize.query(statement)
+      }
       await Database.sequelize.query('DELETE FROM `migrations` WHERE `id` = ?', { replacements: [id] })
       console.info(`Migration rolled back: ${name}`)
     } catch (error) {
