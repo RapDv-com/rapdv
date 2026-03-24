@@ -41,7 +41,7 @@ export class RollbackMigration {
 
     const result: any[] = await this.sequelize.query(
       'SELECT `id`, `name` FROM `migrations` ORDER BY `id` DESC LIMIT 1',
-      { plain: false, raw: true, type: 'SELECT' as any }
+      { plain: false, raw: true, type: 'SELECT' }
     )
 
     if (!result || result.length === 0) {
