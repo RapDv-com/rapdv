@@ -11,7 +11,7 @@ class SequelizeRepositoryAdapter {
 
   private translateOrder(order: any): any[] {
     if (!order) return [['createdAt', 'DESC']]
-    return Object.entries(order).map(([k, v]) => [k, v])
+    return Object.entries(order).map(([key, value]) => [key, value])
   }
 
   private translateOptions(opts: any): any {
@@ -232,7 +232,7 @@ export class Collection {
   public findOne = async (queryData: any, populate?: string[], sort?: any): Promise<any> => {
     try {
       const where = this.translateQuery(queryData)
-      const order = sort ? this.translateSort(sort) : { createdAt: 'ASC' }
+      const order = sort ? this.translateSort(sort) : undefined
       const result = await this.repository.findOne({
         where,
         relations: populate,
@@ -306,7 +306,7 @@ export class Collection {
   public findAll = async (queryData?: any, from?: number, limit?: number, populate?: string[], sort?: any): Promise<any[]> => {
     try {
       const where = queryData ? this.translateQuery(queryData) : {}
-      const order = sort ? this.translateSort(sort) : { createdAt: 'DESC' }
+      const order = sort ? this.translateSort(sort) : undefined
 
       const options: any = { where, order, relations: populate }
       if (from !== undefined) options.skip = from
