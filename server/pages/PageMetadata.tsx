@@ -36,39 +36,53 @@ export class PageMetadata {
           sizes: "512x512"
         },
         {
+          src: "/assets/icons/512.png",
+          type: "image/png",
+          sizes: "512x512"
+        },
+        {
           src: "/assets/icons/192.png",
+          type: "image/png",
           sizes: "192x192"
         },
         {
           src: "/assets/icons/128.png",
+          type: "image/png",
           sizes: "128x128"
         },
         {
           src: "/assets/icons/152.png",
+          type: "image/png",
           sizes: "152x152"
         },
         {
           src: "/assets/icons/144.png",
+          type: "image/png",
           sizes: "144x144"
         },
         {
           src: "/assets/icons/120.png",
+          type: "image/png",
           sizes: "120x120"
         },
         {
           src: "/assets/icons/114.png",
+          type: "image/png",
           sizes: "114x114"
         },
         {
           src: "/assets/icons/76.png",
+          type: "image/png",
           sizes: "76x76"
         },
         {
           src: "/assets/icons/72.png",
+          type: "image/png",
           sizes: "72x72"
         },
         {
           src: "/assets/icons/57.png",
+          type: "image/png",
           sizes: "57x57"
         }
       ],
