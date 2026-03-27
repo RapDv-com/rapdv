@@ -46,7 +46,8 @@ export class AuthEmailCodes {
     mailer: Mailer,
     firstName?: string,
     lastName?: string,
-    role?: UserRole | string
+    role?: UserRole | string,
+    customVerificationUrl?: string
   ): Promise<any> {
     const self = this
     return new Promise<void>(async (resolve, reject) => {
@@ -74,7 +75,7 @@ export class AuthEmailCodes {
       }
 
       try {
-        await AuthEmailCodes.sendVerificationEmail(user, appBasicInfo, mailer)
+        await AuthEmailCodes.sendVerificationEmail(user, appBasicInfo, mailer, customVerificationUrl)
       } catch (error) {
         if (error) return reject(error)
       }
@@ -120,7 +121,7 @@ export class AuthEmailCodes {
     }
   }
 
-  public static sendVerificationEmail = async (user, appBasicInfo: AppBasicInfo, mailer: Mailer): Promise<string | undefined> => {
+  public static sendVerificationEmail = async (user, appBasicInfo: AppBasicInfo, mailer: Mailer, customVerificationUrl?: string): Promise<string | undefined> => {
 
     let twoHours = 7200000
     if (user.verificationCodeEmailSentDate.getTime() >= Date.now() - twoHours) {
@@ -136,7 +137,9 @@ export class AuthEmailCodes {
       return
     }
 
+    const verificationUrlBase = customVerificationUrl ?? `${process.env.BASE_URL}/verify-email/${user.email}/`
     const token = user.emailVerificationCode
+    const verificationUrl = `${verificationUrlBase}${token}`
     const results = await mailer.sendMailAsSupport(
       `${appBasicInfo.name} Email Verification`,
       [user.email],
@@ -147,7 +150,7 @@ export class AuthEmailCodes {
     In order to log in please use this verification code:<br/><br/>
     <b>${user.emailVerificationCode}</b><br/><br/>
     You can also log in, by using link below:<br/><br/>
-    <a href="${process.env.BASE_URL}/verify-email/${user.email}/${token}" target="_blank">Log In to ${appBasicInfo.name}</a><br/><br/>
+    <a href="${verificationUrl}" target="_blank">Log In to ${appBasicInfo.name}</a><br/><br/>
     Have an amazing day!<br/>
     ${appBasicInfo.name}`,
       []
