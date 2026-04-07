@@ -46,13 +46,13 @@ export class DatabaseMigration {
     })
 
     await this.sequelize.authenticate()
-    console.log('Connected to MariaDB')
+    console.info('Connected to MariaDB')
 
     await this.ensureMigrationsTable()
 
     const migrationsDir = path.resolve(process.cwd(), 'migrations')
     if (!fs.existsSync(migrationsDir)) {
-      console.log('No migrations directory found.')
+      console.info('No migrations directory found.')
       return
     }
 
@@ -73,17 +73,17 @@ export class DatabaseMigration {
       const { up } = this.parseMigrationSql(content)
       if (!up) continue
 
-      console.log(`Running migration: ${file}`)
+      console.info(`Running migration: ${file}`)
       const statements = this.splitSql(up).map(statement => statement.trim()).filter(statement => statement.length > 0)
       for (const statement of statements) {
         await this.sequelize.query(statement)
       }
       await this.sequelize.query('INSERT INTO `migrations` (`name`) VALUES (?)', { replacements: [file] })
-      console.log(`Applied: ${file}`)
+      console.info(`Applied: ${file}`)
       ran++
     }
 
-    if (ran === 0) console.log('No new migrations to run.')
+    if (ran === 0) console.info('No new migrations to run.')
     await this.sequelize.close()
   }
 
@@ -99,7 +99,7 @@ export class DatabaseMigration {
     })
 
     await this.sequelize.authenticate()
-    console.log('Connected to MariaDB')
+    console.info('Connected to MariaDB')
 
     const result: any[] = await this.sequelize.query(
       'SELECT `id`, `name` FROM `migrations` ORDER BY `id` DESC LIMIT 1',
@@ -107,7 +107,7 @@ export class DatabaseMigration {
     )
 
     if (!result || result.length === 0) {
-      console.log('No migrations to roll back.')
+      console.info('No migrations to roll back.')
       await this.sequelize.close()
       return
     }
@@ -128,13 +128,13 @@ export class DatabaseMigration {
       throw new Error(`Migration "${name}" has an empty DOWN section.`)
     }
 
-    console.log(`Rolling back migration: ${name}`)
+    console.info(`Rolling back migration: ${name}`)
     const statements = this.splitSql(down).map(statement => statement.trim()).filter(statement => statement.length > 0)
     for (const statement of statements) {
       await this.sequelize.query(statement)
     }
     await this.sequelize.query('DELETE FROM `migrations` WHERE `id` = ?', { replacements: [id] })
-    console.log(`Rolled back: ${name}`)
+    console.info(`Rolled back: ${name}`)
 
     await this.sequelize.close()
   }

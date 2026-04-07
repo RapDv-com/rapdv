@@ -9,7 +9,7 @@ export class CreateMigration extends DatabaseMigration {
 
   public run(migrationName: string): void {
     const fileName = this.writeMigrationFile(migrationName, CreateMigration.EMPTY_MIGRATION_TEMPLATE)
-    console.log(`Created: migrations/${fileName}`)
+    console.info(`Created: migrations/${fileName}`)
   }
 
   public static main(): void {

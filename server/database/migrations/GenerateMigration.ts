@@ -85,8 +85,8 @@ export class GenerateMigration extends DatabaseMigration {
       .map(statement => statement.match(/CREATE TABLE IF NOT EXISTS "([^"]+)"/)?.[1])
       .filter(Boolean)
 
-    console.log(`Generated: migrations/${fileName}`)
-    console.log(`Tables: ${tableNames.join(', ')}`)
+    console.info(`Generated: migrations/${fileName}`)
+    console.info(`Tables: ${tableNames.join(', ')}`)
   }
 
   public static async main(): Promise<void> {

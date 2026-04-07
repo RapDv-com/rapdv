@@ -111,7 +111,7 @@ export class Database {
     Database.sequelize = new Sequelize(databaseUrl, {
       dialect: 'mariadb',
       models: allEntities as any,
-      logging: process.env.LOG_DATABASE === 'true' ? console.log : false,
+      logging: process.env.LOG_DATABASE === 'true' ? console.info : false,
       dialectOptions: isProd ? { ssl: { rejectUnauthorized: false } } : {},
     })
     await Database.sequelize.authenticate()
