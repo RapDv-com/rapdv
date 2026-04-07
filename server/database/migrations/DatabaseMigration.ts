@@ -162,11 +162,10 @@ export class DatabaseMigration {
 
   private splitSql(sql: string): string[] {
     const results = sql
-    .replace(/'[^']*'/g, match => match.replace(/;/g, '\x00'))
+    .replace(/'[^']*'/g, match => match.replace(/;/g, '\uE000')) // Make sure we won't split by semicolons inside string literals. We replace them temporarily with \x00
     .split(';')
-    .map(text => text.replace(/\x00/g, ';'));
+    .map(text => text.replace(/\uE000/g, ';'));
 
-    console.log("Split SQL into statements:", results);
     return results;
   }
 }
