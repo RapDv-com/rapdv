@@ -8,9 +8,9 @@ import { Sequelize } from 'sequelize-typescript'
 import * as path from 'path'
 import dotenv from 'dotenv'
 import { RapDvApp } from '../../RapDvApp'
-import { MigrationBase } from './MigrationBase'
+import { DatabaseMigration } from './DatabaseMigration'
 
-export class GenerateMigration extends MigrationBase {
+export class GenerateMigration extends DatabaseMigration {
   private sqlStatements: string[] = []
 
   private loadBuiltInModels(): any[] {
@@ -90,13 +90,13 @@ export class GenerateMigration extends MigrationBase {
   }
 
   public static async main(): Promise<void> {
-    const migrationName = process.argv[MigrationBase.FIRST_CLI_ARG_INDEX] || 'Database-change'
+    const migrationName = process.argv[DatabaseMigration.FIRST_CLI_ARG_INDEX] || 'Database-change'
     await new GenerateMigration().run(migrationName)
   }
 
   public static handleError(err: Error): void {
     console.error(err)
-    process.exit(MigrationBase.ERROR_EXIT_CODE)
+    process.exit(DatabaseMigration.ERROR_EXIT_CODE)
   }
 }
 

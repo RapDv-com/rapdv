@@ -5,6 +5,7 @@ import { Sequelize } from 'sequelize-typescript'
 import { Collection } from './Collection'
 import * as fs from 'fs'
 import * as path from 'path'
+import { DatabaseMigration } from './migrations/DatabaseMigration'
 
 export enum QueryType {
   Include = 'inlcude',
@@ -118,7 +119,8 @@ export class Database {
     await Database.sequelize.authenticate()
     console.info('MariaDB connection is open')
 
-    await Database.runSqlMigrations()
+    const databaseMigrations = new DatabaseMigration()
+    await databaseMigrations.runMigrations()
 
     // Handle graceful shutdown
     const onClose = async () => {
@@ -148,108 +150,6 @@ export class Database {
     CollectionSystem.create()
     new CollectionUser(customRoles, customUserProps)
     new CollectionUserSession()
-  }
-
-  private static parseMigrationSql(content: string): { up: string, down: string } {
-    const upMarker = '-- UP'
-    const downMarker = '-- DOWN'
-
-    const upIndex = content.indexOf(upMarker)
-    const downIndex = content.indexOf(downMarker)
-
-    if (upIndex === -1) {
-      throw new Error('Migration file must contain a "-- UP" section')
-    }
-
-    if (downIndex === -1) {
-      throw new Error('Migration file must contain a "-- DOWN" section')
-    }
-
-    const up = content.substring(upIndex + upMarker.length, downIndex).trim()
-    const down = content.substring(downIndex + downMarker.length).trim()
-
-    return { up, down }
-  }
-
-  private static getMigrationsDir(): string {
-    return path.resolve(process.cwd(), 'migrations')
-  }
-
-  private static async ensureMigrationsTable() {
-    await Database.sequelize.query('CREATE TABLE IF NOT EXISTS `migrations` (`id` INT AUTO_INCREMENT PRIMARY KEY, `name` VARCHAR(255) NOT NULL, `executedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP)')
-  }
-
-  private static async runSqlMigrations() {
-    try {
-      await Database.ensureMigrationsTable()
-
-      const migrationsDir = Database.getMigrationsDir()
-      if (!fs.existsSync(migrationsDir)) return
-
-      const sqlFiles = fs.readdirSync(migrationsDir)
-        .filter(f => f.endsWith('.sql'))
-        .sort()
-
-      const executed: any[] = await Database.sequelize.query('SELECT `name` FROM `migrations`', { plain: false, raw: true, type: 'SELECT' as any })
-      const executedNames = new Set((executed as any[]).map(r => r.name))
-
-      for (const file of sqlFiles) {
-        if (executedNames.has(file)) continue
-
-        const content = fs.readFileSync(path.join(migrationsDir, file), 'utf-8')
-        const { up } = Database.parseMigrationSql(content)
-        if (!up) continue
-
-        console.info(`Running migration: ${file}`)
-        const statements = up.split(';').map(s => s.trim()).filter(s => s.length > 0)
-        for (const statement of statements) {
-          await Database.sequelize.query(statement)
-        }
-        await Database.sequelize.query('INSERT INTO `migrations` (`name`) VALUES (?)', { replacements: [file] })
-        console.info(`Migration applied: ${file}`)
-      }
-    } catch (error) {
-      console.error('Migration error:', error)
-      throw error
-    }
-  }
-
-  public static async rollbackLastMigration() {
-    try {
-      await Database.ensureMigrationsTable()
-
-      const result: any[] = await Database.sequelize.query('SELECT `id`, `name` FROM `migrations` ORDER BY `id` DESC LIMIT 1', { plain: false, raw: true, type: 'SELECT' as any })
-      if (!result || result.length === 0) {
-        console.info('No migrations to roll back')
-        return
-      }
-
-      const { id, name } = result[0]
-      const migrationsDir = Database.getMigrationsDir()
-      const filePath = path.join(migrationsDir, name)
-
-      if (!fs.existsSync(filePath)) {
-        throw new Error(`Migration file not found: ${name}`)
-      }
-
-      const content = fs.readFileSync(filePath, 'utf-8')
-      const { down } = Database.parseMigrationSql(content)
-
-      if (!down) {
-        throw new Error(`Migration ${name} has an empty DOWN section`)
-      }
-
-      console.info(`Rolling back migration: ${name}`)
-      const statements = down.split(';').map(s => s.trim()).filter(s => s.length > 0)
-      for (const statement of statements) {
-        await Database.sequelize.query(statement)
-      }
-      await Database.sequelize.query('DELETE FROM `migrations` WHERE `id` = ?', { replacements: [id] })
-      console.info(`Migration rolled back: ${name}`)
-    } catch (error) {
-      console.error('Rollback error:', error)
-      throw error
-    }
   }
 
   public static clearCache() {
