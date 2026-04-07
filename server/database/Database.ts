@@ -117,8 +117,10 @@ export class Database {
     await Database.sequelize.authenticate()
     console.info('MariaDB connection is open')
 
-    const databaseMigrations = new DatabaseMigration()
-    await databaseMigrations.runMigrations()
+    if (!isProd) {
+      const databaseMigrations = new DatabaseMigration()
+      await databaseMigrations.runMigrations()
+    }
 
     // Handle graceful shutdown
     const onClose = async () => {
