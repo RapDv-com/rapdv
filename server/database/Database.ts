@@ -3,8 +3,6 @@
 import 'reflect-metadata'
 import { Sequelize } from 'sequelize-typescript'
 import { Collection } from './Collection'
-import * as fs from 'fs'
-import * as path from 'path'
 import { DatabaseMigration } from './migrations/DatabaseMigration'
 
 export enum QueryType {
