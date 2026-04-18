@@ -112,7 +112,7 @@ export class Database {
       dialect: 'mariadb',
       models: allEntities as any,
       logging: process.env.LOG_DATABASE === 'true' ? console.info : false,
-      dialectOptions: isProd ? { ssl: { rejectUnauthorized: false } } : {},
+      dialectOptions: process.env.SKIP_DATABASE_SSL_CHECK == "true" ? { ssl: { rejectUnauthorized: false } } : {},
     })
     await Database.sequelize.authenticate()
     console.info('MariaDB connection is open')
