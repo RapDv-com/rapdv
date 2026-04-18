@@ -43,6 +43,11 @@ export class DatabaseMigration {
     this.sequelize = new Sequelize(databaseUrl, {
       dialect: 'mariadb',
       logging: false,
+      dialectOptions: {
+        ssl: {
+          rejectUnauthorized: false,
+        },
+      },
     })
 
     await this.sequelize.authenticate()
@@ -96,6 +101,11 @@ export class DatabaseMigration {
     this.sequelize = new Sequelize(databaseUrl, {
       dialect: 'mariadb',
       logging: false,
+      dialectOptions: {
+        ssl: {
+          rejectUnauthorized: false,
+        },
+      },
     })
 
     await this.sequelize.authenticate()
