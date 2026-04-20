@@ -69,6 +69,7 @@ export class GenerateMigration extends DatabaseMigration {
           this.sqlStatements.push(cleaned)
         }
       },
+      dialectOptions: process.env.SKIP_DATABASE_SSL_CHECK == 'true' ? { ssl: { rejectUnauthorized: false } } : {},
     })
 
     await sequelize.sync({ force: true })

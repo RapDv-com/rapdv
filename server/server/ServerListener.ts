@@ -8,6 +8,7 @@ import lusca from 'lusca'
 import session from 'express-session'
 import flash from 'express-flash'
 import MySQLStore from 'express-mysql-session'
+import mysql from 'mysql2/promise'
 import passport from 'passport'
 import ReactDOMServer from 'react-dom/server'
 import { CollectionUserSession } from '../database/CollectionUserSession'
@@ -25,15 +26,16 @@ export class ServerListener {
 
   init = () => {
     const dbUrl = new URL(process.env.DATABASE_URL)
-    const SessionStore = MySQLStore(session)
-    const store = new SessionStore({
+    const pool = mysql.createPool({
       host: dbUrl.hostname,
       port: parseInt(dbUrl.port) || 3306,
       user: decodeURIComponent(dbUrl.username),
       password: decodeURIComponent(dbUrl.password),
       database: dbUrl.pathname.slice(1),
-      createDatabaseTable: true,
+      ssl: { rejectUnauthorized: process.env.SKIP_DATABASE_SSL_CHECK != 'true' },
     })
+    const SessionStore = MySQLStore(session)
+    const store = new SessionStore({ createDatabaseTable: true }, pool)
 
     const sessionOptions: any = {
       resave: false,
