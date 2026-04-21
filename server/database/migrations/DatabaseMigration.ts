@@ -1,17 +1,24 @@
 import 'reflect-metadata'
 import { Sequelize } from 'sequelize-typescript'
+import { DataTypes, QueryTypes } from 'sequelize'
+import dotenv from 'dotenv'
 import * as fs from 'fs'
 import * as path from 'path'
+import { Database } from '../Database'
+import { DatabaseConnection } from '../DatabaseConnection'
+import { BuiltInEntities } from '../BuiltInEntities'
 
 export class DatabaseMigration {
   public static readonly ERROR_EXIT_CODE = 1
   protected static readonly FIRST_CLI_ARG_INDEX = 2
-  
+
   private static readonly TWO_DIGITS = 2
   private static readonly ZERO_PAD = '0'
   private static readonly MONTH_OFFSET = 1
+  private static readonly MIGRATIONS_TABLE = 'migrations'
 
   private sequelize: Sequelize
+  private ownedConnection: DatabaseConnection | null = null
 
   protected buildTimestamp(): string {
     const now = new Date()
@@ -34,36 +41,63 @@ export class DatabaseMigration {
     return fileName
   }
 
-  public async runMigrations(): Promise<void> {
-    const databaseUrl = process.env.DATABASE_URL
-    if (!databaseUrl) {
-      throw new Error('DATABASE_URL must be set to a valid MariaDB connection string.')
+  protected async getSequelize(): Promise<Sequelize> {
+    if (this.sequelize) return this.sequelize
+    if (Database.sequelize) {
+      this.sequelize = Database.sequelize
+      return this.sequelize
     }
 
-    this.sequelize = new Sequelize(databaseUrl, {
-      dialect: 'mariadb',
-      logging: false,
-      dialectOptions: process.env.SKIP_DATABASE_SSL_CHECK == 'true' ? { ssl: { rejectUnauthorized: false } } : {},
-    })
+    dotenv.config({ path: '.env.example', override: true })
+    dotenv.config({ path: '.env', override: true })
 
-    await this.sequelize.authenticate()
-    console.info('Connected to MariaDB')
+    const appPath = path.resolve(process.cwd(), 'server/App')
+    const appModule = require(appPath)
+    const AppClass = appModule.App
+    if (!AppClass) {
+      throw new Error('Could not load App class from server/App')
+    }
 
-    await this.ensureMigrationsTable()
+    const app = new AppClass()
+    if (typeof app.getStorage === 'function') {
+      await app.getStorage()
+    }
+    const entities = [...BuiltInEntities.getAll(), ...app.appEntities]
+    const connection: DatabaseConnection = await app.connectDatabase(false, entities)
+    this.ownedConnection = connection
+    this.sequelize = connection.sequelize
+    return this.sequelize
+  }
+
+  protected async closeIfOwned(): Promise<void> {
+    if (this.ownedConnection) {
+      await this.ownedConnection.close()
+      this.ownedConnection = null
+    }
+  }
+
+  public async runMigrations(sequelizeOverride?: Sequelize): Promise<void> {
+    if (sequelizeOverride) this.sequelize = sequelizeOverride
+    const sequelize = await this.getSequelize()
+
+    await sequelize.authenticate()
+    console.info(`Connected to ${sequelize.getDialect()}`)
+
+    await this.ensureMigrationsTable(sequelize)
 
     const migrationsDir = path.resolve(process.cwd(), 'migrations')
     if (!fs.existsSync(migrationsDir)) {
       console.info('No migrations directory found.')
+      await this.closeIfOwned()
       return
     }
 
     const sqlFiles = fs.readdirSync(migrationsDir).filter(fileName => fileName.endsWith('.sql')).sort()
 
-    const executed: any[] = await this.sequelize.query('SELECT `name` FROM `migrations`', {
-      plain: false,
-      raw: true,
-      type: 'SELECT' as any,
-    })
+    const executed: any[] = await sequelize.query(
+      `SELECT name FROM ${DatabaseMigration.MIGRATIONS_TABLE}`,
+      { plain: false, raw: true, type: QueryTypes.SELECT }
+    )
     const executedNames = new Set((executed as any[]).map(row => row.name))
 
     let ran = 0
@@ -77,40 +111,34 @@ export class DatabaseMigration {
       console.info(`Running migration: ${file}`)
       const statements = this.splitSql(up).map(statement => statement.trim()).filter(statement => statement.length > 0)
       for (const statement of statements) {
-        await this.sequelize.query(statement)
+        await sequelize.query(statement)
       }
-      await this.sequelize.query('INSERT INTO `migrations` (`name`) VALUES (?)', { replacements: [file] })
+      await sequelize.query(
+        `INSERT INTO ${DatabaseMigration.MIGRATIONS_TABLE} (name) VALUES (?)`,
+        { replacements: [file] }
+      )
       console.info(`Applied: ${file}`)
       ran++
     }
 
     if (ran === 0) console.info('No new migrations to run.')
-    await this.sequelize.close()
+    await this.closeIfOwned()
   }
 
   public async rollback(): Promise<void> {
-    const databaseUrl = process.env.DATABASE_URL
-    if (!databaseUrl) {
-      throw new Error('DATABASE_URL must be set to a valid MariaDB connection string.')
-    }
+    const sequelize = await this.getSequelize()
 
-    this.sequelize = new Sequelize(databaseUrl, {
-      dialect: 'mariadb',
-      logging: false,
-      dialectOptions: process.env.SKIP_DATABASE_SSL_CHECK == 'true' ? { ssl: { rejectUnauthorized: false } } : {},
-    })
+    await sequelize.authenticate()
+    console.info(`Connected to ${sequelize.getDialect()}`)
 
-    await this.sequelize.authenticate()
-    console.info('Connected to MariaDB')
-
-    const result: any[] = await this.sequelize.query(
-      'SELECT `id`, `name` FROM `migrations` ORDER BY `id` DESC LIMIT 1',
-      { plain: false, raw: true, type: 'SELECT' }
+    const result: any[] = await sequelize.query(
+      `SELECT id, name FROM ${DatabaseMigration.MIGRATIONS_TABLE} ORDER BY id DESC LIMIT 1`,
+      { plain: false, raw: true, type: QueryTypes.SELECT }
     )
 
     if (!result || result.length === 0) {
       console.info('No migrations to roll back.')
-      await this.sequelize.close()
+      await this.closeIfOwned()
       return
     }
 
@@ -133,18 +161,41 @@ export class DatabaseMigration {
     console.info(`Rolling back migration: ${name}`)
     const statements = this.splitSql(down).map(statement => statement.trim()).filter(statement => statement.length > 0)
     for (const statement of statements) {
-      await this.sequelize.query(statement)
+      await sequelize.query(statement)
     }
-    await this.sequelize.query('DELETE FROM `migrations` WHERE `id` = ?', { replacements: [id] })
+    await sequelize.query(
+      `DELETE FROM ${DatabaseMigration.MIGRATIONS_TABLE} WHERE id = ?`,
+      { replacements: [id] }
+    )
     console.info(`Rolled back: ${name}`)
 
-    await this.sequelize.close()
+    await this.closeIfOwned()
   }
 
-  private async ensureMigrationsTable(): Promise<void> {
-    await this.sequelize.query(
-      'CREATE TABLE IF NOT EXISTS `migrations` (`id` INT AUTO_INCREMENT PRIMARY KEY, `name` VARCHAR(255) NOT NULL, `executedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP)'
-    )
+  private async ensureMigrationsTable(sequelize: Sequelize): Promise<void> {
+    const queryInterface = sequelize.getQueryInterface()
+    const allTables: any[] = await queryInterface.showAllTables() as any[]
+    const hasTable = allTables
+      .map(table => (typeof table === 'string' ? table : table.tableName))
+      .some(tableName => tableName === DatabaseMigration.MIGRATIONS_TABLE)
+    if (hasTable) return
+
+    await queryInterface.createTable(DatabaseMigration.MIGRATIONS_TABLE, {
+      id: {
+        type: DataTypes.INTEGER,
+        autoIncrement: true,
+        primaryKey: true,
+      },
+      name: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      executedAt: {
+        type: DataTypes.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
+      },
+    })
   }
 
   private parseMigrationSql(content: string): { up: string; down: string } {

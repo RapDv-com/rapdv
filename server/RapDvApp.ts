@@ -10,6 +10,8 @@ import ReactDOMServer from "react-dom/server"
 import { Upload } from "./upload/Upload"
 import { ReactNode } from "react"
 import { Database } from "./database/Database"
+import { DatabaseConnection } from "./database/DatabaseConnection"
+import { ConnectMariaDb } from "./database/connectors/ConnectMariaDb"
 import { Collection } from "./database/Collection"
 import { Response } from "express"
 import { Auth } from "./auth/Auth"
@@ -485,6 +487,10 @@ export abstract class RapDvApp {
   public getCustomUserProps = (): any => ({})
 
   public createDatabase = () => new Database()
+
+  public connectDatabase = async (isProduction: boolean, entities: Function[]): Promise<DatabaseConnection> => {
+    return ConnectMariaDb.connect(entities)
+  }
 
   public redirectToPage = (req: Request, res: Response, next: NextFunction, url: string, flashMsg?: string, flashType: FlashType = FlashType.Warning) => {
 

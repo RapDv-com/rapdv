@@ -1,37 +1,31 @@
 #!/usr/bin/env ts-node
 // Generates a SQL migration from Sequelize model definitions.
-// Requires a running MariaDB instance via DATABASE_URL.
+// Uses the dialect configured by App.connectDatabase (for example MariaDB or PostgreSQL).
 // Usage: npx ts-node [path/to/]GenerateMigration.ts [migration-name]
 
 import 'reflect-metadata'
-import { Sequelize } from 'sequelize-typescript'
 import * as path from 'path'
 import dotenv from 'dotenv'
 import { RapDvApp } from '../../RapDvApp'
+import { BuiltInEntities } from '../BuiltInEntities'
+import { DatabaseConnection } from '../DatabaseConnection'
 import { DatabaseMigration } from './DatabaseMigration'
 
 export class GenerateMigration extends DatabaseMigration {
+  private static readonly CREATE_TABLE_REGEX = /CREATE TABLE IF NOT EXISTS [`"]([^`"]+)[`"]/
   private sqlStatements: string[] = []
 
-  private loadBuiltInModels(): any[] {
-    const { Log } = require('../CollectionLog')
-    const { File } = require('../CollectionFile')
-    const { ImageFile } = require('../CollectionImageFile')
-    const { System } = require('../CollectionSystem')
-    const { User } = require('../CollectionUser')
-    const { UserSession } = require('../CollectionUserSession')
-    return [Log, File, ImageFile, System, User, UserSession]
-  }
-
-  private async loadAppModels(): Promise<any[]> {
+  private async loadApp(): Promise<RapDvApp> {
     const appPath = path.resolve(process.cwd(), 'server/App')
     const appModule = require(appPath)
     const AppClass = appModule.App
-    if (!AppClass) return []
+    if (!AppClass) {
+      throw new Error('Could not load App class from server/App')
+    }
 
     const app: RapDvApp = new AppClass()
     await app.getStorage()
-    return app.appEntities as any[]
+    return app
   }
 
   private buildUpSection(): string {
@@ -40,40 +34,33 @@ export class GenerateMigration extends DatabaseMigration {
 
   private buildDownSection(): string {
     const tableNames = this.sqlStatements
-      .map(statement => statement.match(/CREATE TABLE IF NOT EXISTS "([^"]+)"/)?.[1])
+      .map(statement => statement.match(GenerateMigration.CREATE_TABLE_REGEX)?.[1])
       .filter(Boolean)
       .reverse()
     return tableNames.map(tableName => `DROP TABLE IF EXISTS "${tableName}" CASCADE`).join(';\n') + ';'
   }
 
-
   public async run(migrationName: string): Promise<void> {
     dotenv.config({ path: '.env.example', override: true })
     dotenv.config({ path: '.env', override: true })
 
-    const databaseUrl = process.env.DATABASE_URL
-    if (!databaseUrl) {
+    if (!process.env.DATABASE_URL) {
       throw new Error('DATABASE_URL is required to generate migrations. Set it in your .env file.')
     }
 
-    const builtInModels = this.loadBuiltInModels()
-    const appModels = await this.loadAppModels()
-    const allModels = [...builtInModels, ...appModels]
+    const app = await this.loadApp()
+    const entities = [...BuiltInEntities.getAll(), ...app.appEntities]
+    const connection: DatabaseConnection = await app.connectDatabase(false, entities)
 
-    const sequelize = new Sequelize(databaseUrl, {
-      dialect: 'mariadb',
-      models: allModels as any,
-      logging: (sql: string) => {
-        const cleaned = sql.replace(/^Executing \(default\): /, '')
-        if (/^\s*CREATE TABLE/i.test(cleaned)) {
-          this.sqlStatements.push(cleaned)
-        }
-      },
-      dialectOptions: process.env.SKIP_DATABASE_SSL_CHECK == 'true' ? { ssl: { rejectUnauthorized: false } } : {},
-    })
+    const captureCreateTable = (sql: string) => {
+      const cleaned = sql.replace(/^Executing \(default\): /, '')
+      if (/^\s*CREATE TABLE/i.test(cleaned)) {
+        this.sqlStatements.push(cleaned)
+      }
+    }
 
-    await sequelize.sync({ force: true })
-    await sequelize.close()
+    await connection.sequelize.sync({ force: true, logging: captureCreateTable })
+    await connection.close()
 
     if (this.sqlStatements.length === 0) {
       throw new Error('No CREATE TABLE statements captured.')
@@ -83,7 +70,7 @@ export class GenerateMigration extends DatabaseMigration {
     const fileName = this.writeMigrationFile(migrationName, content)
 
     const tableNames = this.sqlStatements
-      .map(statement => statement.match(/CREATE TABLE IF NOT EXISTS "([^"]+)"/)?.[1])
+      .map(statement => statement.match(GenerateMigration.CREATE_TABLE_REGEX)?.[1])
       .filter(Boolean)
 
     console.info(`Generated: migrations/${fileName}`)

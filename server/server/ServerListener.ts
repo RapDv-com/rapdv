@@ -7,8 +7,6 @@ import bodyParser from 'body-parser'
 import lusca from 'lusca'
 import session from 'express-session'
 import flash from 'express-flash'
-import MySQLStore from 'express-mysql-session'
-import mysql from 'mysql2/promise'
 import passport from 'passport'
 import ReactDOMServer from 'react-dom/server'
 import { CollectionUserSession } from '../database/CollectionUserSession'
@@ -19,28 +17,18 @@ export class ServerListener {
   public express = express()
   expressViews: Array<string> = new Array()
   isProduction: boolean
+  private sessionStore: session.Store
 
-  constructor(isProduction: boolean) {
+  constructor(isProduction: boolean, sessionStore: session.Store) {
     this.isProduction = isProduction
+    this.sessionStore = sessionStore
   }
 
   init = () => {
-    const dbUrl = new URL(process.env.DATABASE_URL)
-    const pool = mysql.createPool({
-      host: dbUrl.hostname,
-      port: parseInt(dbUrl.port) || 3306,
-      user: decodeURIComponent(dbUrl.username),
-      password: decodeURIComponent(dbUrl.password),
-      database: dbUrl.pathname.slice(1),
-      ssl: { rejectUnauthorized: process.env.SKIP_DATABASE_SSL_CHECK != 'true' },
-    })
-    const SessionStore = MySQLStore(session)
-    const store = new SessionStore({ createDatabaseTable: true }, pool)
-
     const sessionOptions: any = {
       resave: false,
       saveUninitialized: false,
-      store,
+      store: this.sessionStore,
       secret: process.env.SESSION_SECRET,
       cookie: {
         maxAge: undefined,

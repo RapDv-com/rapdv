@@ -9,6 +9,7 @@ import reload from "reload"
 import * as http from "http"
 import * as os from "os"
 import { Database } from "../database/Database"
+import { BuiltInEntities } from "../database/BuiltInEntities"
 import { RapDvApp } from "../RapDvApp"
 import { ReqType } from "../ReqType"
 import { PageMetadata } from "../pages/PageMetadata"
@@ -116,10 +117,13 @@ export class Server {
     const app = this.getApp()
     this.database = app.createDatabase()
     await app.getStorage()
-    await this.database.init(process.env.DATABASE_URL, this.isProduction, app.appEntities)
+
+    const entities = [...BuiltInEntities.getAll(), ...app.appEntities]
+    const connection = await app.connectDatabase(this.isProduction, entities)
+    await this.database.init(connection, this.isProduction)
 
     await this.database.initDatabaseContent(app.getRoles(), app.getCustomUserProps() ?? {})
-    const appListener = new ServerListener(this.isProduction)
+    const appListener = new ServerListener(this.isProduction, connection.sessionStore)
     const appExpress = appListener.express
 
     appListener.init()

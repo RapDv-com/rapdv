@@ -3,6 +3,7 @@
 import 'reflect-metadata'
 import { Sequelize } from 'sequelize-typescript'
 import { Collection } from './Collection'
+import { DatabaseConnection } from './DatabaseConnection'
 import { DatabaseMigration } from './migrations/DatabaseMigration'
 
 export enum QueryType {
@@ -94,40 +95,22 @@ export class Database {
     return key
   }
 
-  public init = async (databaseUrl: string, isProd: boolean, appEntities: Function[] = []) => {
+  public init = async (connection: DatabaseConnection, isProd: boolean) => {
     Collection.clearCollections()
 
-    // Import built-in entities
-    const { Log } = require('./CollectionLog')
-    const { File } = require('./CollectionFile')
-    const { ImageFile } = require('./CollectionImageFile')
-    const { System } = require('./CollectionSystem')
-    const { User } = require('./CollectionUser')
-    const { UserSession } = require('./CollectionUserSession')
-
-    const builtInEntities = [Log, File, ImageFile, System, User, UserSession]
-    const allEntities = [...builtInEntities, ...appEntities]
-
-    Database.sequelize = new Sequelize(databaseUrl, {
-      dialect: 'mariadb',
-      models: allEntities as any,
-      logging: process.env.LOG_DATABASE === 'true' ? console.info : false,
-      dialectOptions: process.env.SKIP_DATABASE_SSL_CHECK == "true" ? { ssl: { rejectUnauthorized: false } } : {},
-    })
-    await Database.sequelize.authenticate()
-    console.info('MariaDB connection is open')
+    Database.sequelize = connection.sequelize
+    const dialect = connection.sequelize.getDialect()
+    console.info(`${dialect} connection is open`)
 
     if (!isProd) {
       const databaseMigrations = new DatabaseMigration()
-      await databaseMigrations.runMigrations()
+      await databaseMigrations.runMigrations(connection.sequelize)
     }
 
     // Handle graceful shutdown
     const onClose = async () => {
-      if (Database.sequelize) {
-        await Database.sequelize.close()
-        console.info('MariaDB connection closed')
-      }
+      await connection.close()
+      console.info(`${dialect} connection closed`)
       process.exit(0)
     }
 
