@@ -15,7 +15,6 @@ export class DatabaseMigration {
   private static readonly TWO_DIGITS = 2
   private static readonly ZERO_PAD = '0'
   private static readonly MONTH_OFFSET = 1
-  private static readonly MIGRATIONS_SCHEMA = 'meta'
   private static readonly MIGRATIONS_TABLE = 'migrations'
 
   private sequelize: Sequelize
@@ -85,7 +84,6 @@ export class DatabaseMigration {
     console.info(`Connected to ${sequelize.getDialect()}`)
 
     await this.ensureMigrationsTable(sequelize)
-    const migrationsTable = this.getMigrationsTableSqlName(sequelize)
 
     const migrationsDir = path.resolve(process.cwd(), 'migrations')
     if (!fs.existsSync(migrationsDir)) {
@@ -97,7 +95,7 @@ export class DatabaseMigration {
     const sqlFiles = fs.readdirSync(migrationsDir).filter(fileName => fileName.endsWith('.sql')).sort()
 
     const executed: any[] = await sequelize.query(
-      `SELECT name FROM ${migrationsTable}`,
+      `SELECT name FROM ${DatabaseMigration.MIGRATIONS_TABLE}`,
       { plain: false, raw: true, type: QueryTypes.SELECT }
     )
     const executedNames = new Set((executed as any[]).map(row => row.name))
@@ -116,7 +114,7 @@ export class DatabaseMigration {
         await sequelize.query(statement)
       }
       await sequelize.query(
-        `INSERT INTO ${migrationsTable} (name) VALUES (?)`,
+        `INSERT INTO ${DatabaseMigration.MIGRATIONS_TABLE} (name) VALUES (?)`,
         { replacements: [file] }
       )
       console.info(`Applied: ${file}`)
@@ -129,13 +127,12 @@ export class DatabaseMigration {
 
   public async rollback(): Promise<void> {
     const sequelize = await this.getSequelize()
-    const migrationsTable = this.getMigrationsTableSqlName(sequelize)
 
     await sequelize.authenticate()
     console.info(`Connected to ${sequelize.getDialect()}`)
 
     const result: any[] = await sequelize.query(
-      `SELECT id, name FROM ${migrationsTable} ORDER BY id DESC LIMIT 1`,
+      `SELECT id, name FROM ${DatabaseMigration.MIGRATIONS_TABLE} ORDER BY id DESC LIMIT 1`,
       { plain: false, raw: true, type: QueryTypes.SELECT }
     )
 
@@ -167,7 +164,7 @@ export class DatabaseMigration {
       await sequelize.query(statement)
     }
     await sequelize.query(
-      `DELETE FROM ${migrationsTable} WHERE id = ?`,
+      `DELETE FROM ${DatabaseMigration.MIGRATIONS_TABLE} WHERE id = ?`,
       { replacements: [id] }
     )
     console.info(`Rolled back: ${name}`)
@@ -177,47 +174,13 @@ export class DatabaseMigration {
 
   private async ensureMigrationsTable(sequelize: Sequelize): Promise<void> {
     const queryInterface = sequelize.getQueryInterface()
-    const isPostgres = sequelize.getDialect() === 'postgres'
-    if (isPostgres) {
-      await sequelize.query(`CREATE SCHEMA IF NOT EXISTS "${DatabaseMigration.MIGRATIONS_SCHEMA}"`)
-
-      const [schemaCheck]: any[] = await sequelize.query(
-        `SELECT to_regclass('"${DatabaseMigration.MIGRATIONS_SCHEMA}"."${DatabaseMigration.MIGRATIONS_TABLE}"') AS meta_table, to_regclass('"public"."${DatabaseMigration.MIGRATIONS_TABLE}"') AS public_table`,
-        { plain: false, raw: true, type: QueryTypes.SELECT }
-      )
-      if (!schemaCheck?.meta_table && schemaCheck?.public_table) {
-        await sequelize.query(
-          `ALTER TABLE "public"."${DatabaseMigration.MIGRATIONS_TABLE}" SET SCHEMA "${DatabaseMigration.MIGRATIONS_SCHEMA}"`
-        )
-      }
-    }
-
     const allTables: any[] = await queryInterface.showAllTables() as any[]
     const hasTable = allTables
-      .some(table => {
-        if (typeof table === 'string') {
-          if (isPostgres) {
-            return table === `${DatabaseMigration.MIGRATIONS_SCHEMA}.${DatabaseMigration.MIGRATIONS_TABLE}`
-          }
-          return table === DatabaseMigration.MIGRATIONS_TABLE
-        }
-
-        const tableName = table.tableName ?? table.table_name ?? table.name
-        const tableSchema = table.schema ?? table.tableSchema ?? table.table_schema
-
-        if (isPostgres) {
-          return tableName === DatabaseMigration.MIGRATIONS_TABLE && tableSchema === DatabaseMigration.MIGRATIONS_SCHEMA
-        }
-
-        return tableName === DatabaseMigration.MIGRATIONS_TABLE
-      })
+      .map(table => (typeof table === 'string' ? table : table.tableName))
+      .some(tableName => tableName === DatabaseMigration.MIGRATIONS_TABLE)
     if (hasTable) return
 
-    const tableReference = isPostgres
-      ? { tableName: DatabaseMigration.MIGRATIONS_TABLE, schema: DatabaseMigration.MIGRATIONS_SCHEMA }
-      : DatabaseMigration.MIGRATIONS_TABLE
-
-    await queryInterface.createTable(tableReference, {
+    await queryInterface.createTable(DatabaseMigration.MIGRATIONS_TABLE, {
       id: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
@@ -233,14 +196,6 @@ export class DatabaseMigration {
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
       },
     })
-  }
-
-  private getMigrationsTableSqlName(sequelize: Sequelize): string {
-    if (sequelize.getDialect() === 'postgres') {
-      return `"${DatabaseMigration.MIGRATIONS_SCHEMA}"."${DatabaseMigration.MIGRATIONS_TABLE}"`
-    }
-
-    return DatabaseMigration.MIGRATIONS_TABLE
   }
 
   private parseMigrationSql(content: string): { up: string; down: string } {
