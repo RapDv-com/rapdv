@@ -65,7 +65,7 @@ export class ServerListener {
     try {
       let contentText = '<!DOCTYPE html>' + ReactDOMServer.renderToStaticMarkup(content)
       contentText = contentText.replace(/{{_csrf}}/g, res.locals._csrf)
-      res.send(content)
+      res.send(contentText)
     } catch (error) {
       console.error('Error on rendering views. ' + error)
     }

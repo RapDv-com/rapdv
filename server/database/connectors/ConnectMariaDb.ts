@@ -16,23 +16,31 @@ export class ConnectMariaDb {
     }
     const skipSslCheck = process.env.SKIP_DATABASE_SSL_CHECK === 'true'
 
+    let dialectOptions: any = {}
+    if (skipSslCheck) {
+      dialectOptions = { ssl: { rejectUnauthorized: false } }
+    }
+
     const sequelize = new Sequelize(databaseUrl, {
       dialect: 'mariadb',
       models: entities as any,
       logging: process.env.LOG_DATABASE === 'true' ? console.info : false,
-      dialectOptions: skipSslCheck ? { ssl: { rejectUnauthorized: false } } : {},
+      dialectOptions,
     })
     await sequelize.authenticate()
 
     const parsedUrl = new URL(databaseUrl)
-    const pool = mysql.createPool({
+    let poolOptions: any = {
       host: parsedUrl.hostname,
       port: parseInt(parsedUrl.port) || ConnectMariaDb.DEFAULT_MARIADB_PORT,
       user: decodeURIComponent(parsedUrl.username),
       password: decodeURIComponent(parsedUrl.password),
       database: parsedUrl.pathname.slice(1),
-      ssl: { rejectUnauthorized: !skipSslCheck },
-    })
+    }
+    if (skipSslCheck) {
+      poolOptions.ssl = { rejectUnauthorized: false }
+    }
+    const pool = mysql.createPool(poolOptions)
     const SessionStore = MySQLStore(session)
     const sessionStore = new SessionStore({ createDatabaseTable: true }, pool) as unknown as session.Store
 
