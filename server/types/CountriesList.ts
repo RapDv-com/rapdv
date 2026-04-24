@@ -97,8 +97,9 @@ export class CountriesList {
   }
 
   public static isEuCountry(countryCode: string): boolean {
-    let euCountries = CountriesList.getEuCountriesList();
-    return euCountries.indexOf(countryCode) >= 0;
+    const euCountries = CountriesList.getEuCountriesList();
+    const formattedCountryCode = countryCode.toUpperCase();
+    return euCountries.indexOf(formattedCountryCode) >= 0;
   }
 
   public static getCountryNameFromCode(countryCode: string): string {
