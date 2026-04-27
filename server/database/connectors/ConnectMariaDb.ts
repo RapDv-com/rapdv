@@ -5,6 +5,7 @@ import session from 'express-session'
 import mysql from 'mysql2/promise'
 import MySQLStore from 'express-mysql-session'
 import { DatabaseConnection } from '../DatabaseConnection'
+import { SessionStoreConnection } from './SessionStoreConnection'
 
 export class ConnectMariaDb {
   private static readonly DEFAULT_MARIADB_PORT = 3306
@@ -45,6 +46,7 @@ export class ConnectMariaDb {
     const sessionStore = new SessionStore({ createDatabaseTable: true }, pool) as unknown as session.Store
 
     const close = async () => {
+      await SessionStoreConnection.close(sessionStore)
       await sequelize.close()
       await pool.end()
     }

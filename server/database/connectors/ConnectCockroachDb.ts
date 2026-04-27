@@ -5,6 +5,7 @@ import session from "express-session"
 import { Pool } from "pg"
 import connectPgSimple from "connect-pg-simple"
 import { DatabaseConnection } from "../DatabaseConnection"
+import { SessionStoreConnection } from "./SessionStoreConnection"
 import fs from "fs"
 
 export class ConnectCockroachDb {
@@ -61,6 +62,7 @@ export class ConnectCockroachDb {
     })
 
     const close = async () => {
+      await SessionStoreConnection.close(sessionStore)
       await sequelize.close()
       await pool.end()
     }

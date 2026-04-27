@@ -5,6 +5,7 @@ import session from "express-session"
 import { Pool } from "pg"
 import connectPgSimple from "connect-pg-simple"
 import { DatabaseConnection } from "../DatabaseConnection"
+import { SessionStoreConnection } from "./SessionStoreConnection"
 
 export class ConnectPostgres {
   private static readonly DEFAULT_POSTGRES_PORT = 5432
@@ -45,6 +46,7 @@ export class ConnectPostgres {
     })
 
     const close = async () => {
+      await SessionStoreConnection.close(sessionStore)
       await sequelize.close()
       await pool.end()
     }
