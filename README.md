@@ -53,3 +53,4 @@ Folders functions:
 - All code should be writted in an object-oriented way, and all functions should be methods of a class
 - Don't use variables with single letter names, except for loop counters. Use descriptive names for variables and functions.
 - Don't use magic numbers, use constants with descriptive names instead.
+- No callback hell, use async/await instead of callbacks or promises
