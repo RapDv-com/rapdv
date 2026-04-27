@@ -1,5 +1,5 @@
 export class SessionStoreConnection {
-  
+
   public static async close(sessionStore: any): Promise<void> {
     const closeMethod = sessionStore?.close
     if (typeof closeMethod !== 'function') {
@@ -7,6 +7,7 @@ export class SessionStoreConnection {
     }
 
     if (closeMethod.length > 0) {
+      // Handle callback
       await new Promise<void>((resolve, reject) => {
         closeMethod((error: any) => {
           if (error) {
