@@ -40,7 +40,7 @@ export class Currency {
     currencies.push(new Currency(Currency.AED, "AE", "د.إ", "United Arab Emirates Dirham", true))
     currencies.push(new Currency(Currency.AUD, "AU", "A$", "Australian Dollar", true))
     currencies.push(new Currency(Currency.BGN, "BG", "лв", "Bulgarian Lev", false))
-    currencies.push(new Currency(Currency.CAD, "CA", "$", "Canadian Dollar", true))
+    currencies.push(new Currency(Currency.CAD, "CA", "C$", "Canadian Dollar", true))
     currencies.push(new Currency(Currency.CHF, "CH", "CHF", "Swiss Franc", true))
     currencies.push(new Currency(Currency.CZK, "CZ", "Kč", "Czech Koruna", false))
     currencies.push(new Currency(Currency.DKK, "DK", "kr", "Danish Krone", false))
