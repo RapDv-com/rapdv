@@ -3,9 +3,7 @@
 import 'reflect-metadata'
 import { Op } from 'sequelize'
 import { TextUtils } from '../text/TextUtils'
-import { Database } from './Database'
 
-// SequelizeRepositoryAdapter — provides a repository API over Sequelize models
 class SequelizeRepositoryAdapter {
   constructor(private modelClass: any) {}
 
@@ -67,8 +65,6 @@ class SequelizeRepositoryAdapter {
     return this.modelClass.count(seqOpts)
   }
 
-  // Retained for backward compatibility — collection files that still use it
-  // will need to be rewritten; this throws a helpful error to catch any missed ones.
   createQueryBuilder(alias: string): never {
     throw new Error(`createQueryBuilder('${alias}') is not supported with Sequelize. Rewrite the query using Op.like / Op.or.`)
   }
