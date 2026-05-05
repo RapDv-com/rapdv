@@ -21,7 +21,6 @@ export class SelectOptions {
 
   public static getCountries = (supporedCountryCodes?: string[]): Option[] => {
 
-
     const countryOptions = []
     const allCountries = CountriesList.getCountriesAsJson()
 

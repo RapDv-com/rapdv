@@ -145,7 +145,7 @@ export class User extends RapDvBaseEntity {
         false
       )
       if (imageFile) {
-        this.photoId = imageFile._id
+        this.photoId = imageFile.id
       }
     } catch (err) {
       console.error('Couldn\'t save profile photo from URL. ', err)
@@ -271,7 +271,7 @@ export class CollectionUser extends Collection {
     if (!id) return null
 
     try {
-      const idStr = id._id ? id._id.toString() : id.toString()
+      const idStr = id.id ? id.id.toString() : id.toString()
       const result = await User.findOne({ where: { id: idStr } })
       return result
     } catch (error) {

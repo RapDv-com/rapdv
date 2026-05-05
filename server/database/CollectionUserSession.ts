@@ -50,7 +50,7 @@ export class CollectionUserSession extends Collection {
 
     const collectionUserSession = Collection.get('UserSession') as CollectionUserSession
     let expiresDate = new Date(new Date().getTime() + CollectionUserSession.DEFAULT_USER_EXPERIATION_TIME_MS)
-    const userId = user && (user._id || user.id) ? (user._id || user.id).toString() : user?.toString()
+    const userId = user && user.id ? user.id.toString() : user?.toString()
 
     const newInstance = collectionUserSession.repository.create({
       userId,
@@ -69,7 +69,7 @@ export class CollectionUserSession extends Collection {
     const collectionUserSession = Collection.get('UserSession') as CollectionUserSession
 
     try {
-      const userId = user && (user._id || user.id) ? (user._id || user.id).toString() : user?.toString()
+      const userId = user && user.id ? user.id.toString() : user?.toString()
       let result = await collectionUserSession.repository.find({
         where: { userId },
         order: { createdAt: 'ASC' },
@@ -86,7 +86,7 @@ export class CollectionUserSession extends Collection {
     const collectionUserSession = Collection.get('UserSession') as CollectionUserSession
 
     try {
-      const userId = user && (user._id || user.id) ? (user._id || user.id).toString() : user?.toString()
+      const userId = user && user.id ? user.id.toString() : user?.toString()
       let result = await collectionUserSession.repository.findOne({
         where: { userId, sessionId },
         order: { createdAt: 'ASC' },
@@ -119,7 +119,7 @@ export class CollectionUserSession extends Collection {
     const collectionUserSession = Collection.get('UserSession') as CollectionUserSession
 
     try {
-      const userId = user && (user._id || user.id) ? (user._id || user.id).toString() : user?.toString()
+      const userId = user && user.id ? user.id.toString() : user?.toString()
       let result = await collectionUserSession.repository.delete({ userId, sessionId })
       return result
     } catch (error) {
@@ -146,7 +146,7 @@ export class CollectionUserSession extends Collection {
     const collectionUserSession = Collection.get('UserSession') as CollectionUserSession
 
     try {
-      const userId = user && (user._id || user.id) ? (user._id || user.id).toString() : user?.toString()
+      const userId = user && user.id ? user.id.toString() : user?.toString()
       let result = await collectionUserSession.repository.delete({ userId })
       return result
     } catch (error) {

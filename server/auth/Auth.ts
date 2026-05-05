@@ -16,7 +16,7 @@ export class Auth {
 
   public static configure = () => {
     passport.serializeUser((user, done) => {
-      done(null, user._id)
+      done(null, user.id)
     })
 
     passport.deserializeUser(async (id, done) => {
@@ -56,7 +56,7 @@ export class Auth {
   }
 
   public static checkUserAuthorization = (rolesAllowed: (Role | UserRole | string)[]) => async (req: Request, res: Response, next: NextFunction) => {
-    const user = !!req?.user ? await CollectionUser.findUserById(req.user._id) : undefined
+    const user = !!req?.user ? await CollectionUser.findUserById(req.user.id) : undefined
 
     if (!!rolesAllowed && rolesAllowed.includes(Auth.SETUP)) {
       // Check if setup is still on-going
@@ -110,7 +110,7 @@ export class Auth {
     const self = this
     return new Promise<void>(async (resolve, reject) => {
       req.logIn(user, async (error) => {
-        user = !!user ? await CollectionUser.findUserById(user._id) : undefined
+        user = !!user ? await CollectionUser.findUserById(user.id) : undefined
 
         if (user.isBanned()) {
           await self.logout(req)
@@ -135,10 +135,10 @@ export class Auth {
 
   public static async logout(req): Promise<any> {
     return new Promise<void>(async (resolve, reject) => {
-      if (req.user && req.user._id) {
-        await CollectionUserSession.removeUserSession(req.user._id, req.sessionID)
+      if (req.user && req.user.id) {
+        await CollectionUserSession.removeUserSession(req.user.id, req.sessionID)
 
-        const user = !!req?.user ? await CollectionUser.findUserById(req.user._id) : undefined
+        const user = !!req?.user ? await CollectionUser.findUserById(req.user.id) : undefined
         if (user) {
           user.verificationCodeEmailSentDate = new Date(0) // Allow to log in again instantly
           await user?.save()

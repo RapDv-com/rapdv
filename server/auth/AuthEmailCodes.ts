@@ -71,7 +71,7 @@ export class AuthEmailCodes {
         }
 
         user = await CollectionUser.createUserForAuthEmailCodes(email, false, firstName ?? "", lastName ?? "", role ?? UserRole.User, UserStatus.Live, "")
-        user = await CollectionUser.findUserById(user._id)
+        user = await CollectionUser.findUserById(user.id)
       }
 
       try {

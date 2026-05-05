@@ -30,7 +30,6 @@ export class Database {
 
   public static getEntryId(entry): any {
     if (!entry) return null
-    if (entry._id) return entry._id.toString()
     if (entry.id) return entry.id.toString()
     return entry.toString()
   }
@@ -38,18 +37,18 @@ export class Database {
   public static async createOrGetRef(instance: any, propertyName, createNew: () => Promise<any>, findById: (id) => Promise<any>): Promise<any> {
     if (!instance[propertyName]) {
       let newInstance = await createNew()
-      instance[propertyName] = newInstance._id
+      instance[propertyName] = newInstance.id
       await instance.save()
       return newInstance
     }
 
-    if (instance[propertyName]._id) return instance[propertyName]
+    if (instance[propertyName].id) return instance[propertyName]
     instance[propertyName] = await findById(instance[propertyName])
     return instance[propertyName]
   }
 
   public static async generateKey(
-    _id,
+    id,
     initialKey,
     findByKey: (key) => Promise<any>,
     accentsToLatin: (text: string) => string,
@@ -68,7 +67,7 @@ export class Database {
     key = key.replace(/[.,;:\s]/g, '-').replace(/[^A-Z0-9\-_]/gi, '')
 
     let currentId = null
-    if (_id) currentId = _id.toString()
+    if (id) currentId = id.toString()
 
     try {
       let addedDash = false
@@ -78,7 +77,7 @@ export class Database {
 
       while (isDuplicate) {
         let entryWithSameKey = await findByKey(key)
-        isDuplicate = (!currentId && !!entryWithSameKey) || (currentId && !!entryWithSameKey && entryWithSameKey._id.toString() != currentId)
+        isDuplicate = (!currentId && !!entryWithSameKey) || (currentId && !!entryWithSameKey && entryWithSameKey.id.toString() != currentId)
         if (!isDuplicate) break
 
         if (!addedDash) {

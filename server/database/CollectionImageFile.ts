@@ -114,7 +114,7 @@ export class CollectionImageFile extends Collection {
     const collectionFile: CollectionFile = Collection.get('File') as CollectionFile
     const file = await collectionFile.createFile(name, storageType, filePath, encoding, mimetype, size, isPublic)
 
-    if (!file || !file._id) {
+    if (!file || !file.id) {
       throw new Error('Error. Image file wasn\'t stored.')
     }
 
@@ -269,7 +269,7 @@ export class CollectionImageFile extends Collection {
     if (!id) return null
 
     try {
-      const idStr = id._id ? id._id.toString() : id.toString()
+      const idStr = id.id ? id.id.toString() : id.toString()
       let result = await ImageFile.findOne({
         where: { id: idStr },
         include: [{ association: 'file' }],
@@ -380,7 +380,7 @@ export class CollectionImageFile extends Collection {
 
       try {
         let image = await this.findByKey(key)
-        if (image) imageIds.push(image._id)
+        if (image) imageIds.push(image.id)
       } catch (exception) {
         console.warn('Couldn\'t find image by key: ' + key)
       }

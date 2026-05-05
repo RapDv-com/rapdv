@@ -83,7 +83,6 @@ export class Collection {
 
   public static getEntryId(entry): any {
     if (!entry) return null
-    if (entry._id) return entry._id.toString()
     if (entry.id) return entry.id.toString()
     return entry.toString()
   }
@@ -179,20 +178,14 @@ export class Collection {
     for (const key in queryData) {
       const value = queryData[key]
 
-      // Map _id alias to the actual primary key column
-      if (key === '_id') {
-        result['id'] = value
-        continue
-      }
-
       // Check if this is a relation field (association)
       if (associations[key]) {
         const assoc = associations[key]
         const idKey = assoc.foreignKey || (key + 'Id')
         if (value === null || value === undefined) {
           result[idKey] = null
-        } else if (value && typeof value === 'object' && (value._id || value.id)) {
-          result[idKey] = (value._id || value.id).toString()
+        } else if (value && typeof value === 'object' && value.id) {
+          result[idKey] = value.id.toString()
         } else {
           result[idKey] = value.toString()
         }
@@ -287,7 +280,7 @@ export class Collection {
     if (!id) return null
 
     try {
-      const idStr = id._id ? id._id.toString() : id.toString()
+      const idStr = id.id ? id.id.toString() : id.toString()
       const result = await this.repository.findOne({
         where: { id: idStr },
         relations: populate,
@@ -329,10 +322,10 @@ export class Collection {
 
   public save = async (data: any): Promise<any> => {
     let entry
-    if (!data._id && !data.id) {
+    if (!data.id) {
       entry = this.repository.create(data)
     } else {
-      const id = data._id || data.id
+      const id = data.id
       entry = await this.findById(id)
       if (!entry) {
         Collection.onError(
@@ -371,7 +364,7 @@ export class Collection {
       let isDuplicate = true
       while (isDuplicate) {
         let entryWithSameKey = await findDuplicateByKey(key)
-        isDuplicate = (!currentId && entryWithSameKey) || (currentId && entryWithSameKey && entryWithSameKey._id.toString() != currentId)
+        isDuplicate = (!currentId && entryWithSameKey) || (currentId && entryWithSameKey && entryWithSameKey.id.toString() != currentId)
         if (!isDuplicate) break
 
         const SINGLE_DIGIT = 10

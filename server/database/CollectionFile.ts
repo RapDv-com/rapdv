@@ -387,7 +387,7 @@ export class CollectionFile extends Collection {
     if (!id) return null
 
     try {
-      const idStr = id._id ? id._id.toString() : id.toString()
+      const idStr = id.id ? id.id.toString() : id.toString()
       let result = await this.repository.findOne({ where: { id: idStr }, order: { createdAt: 'ASC' } })
       return result
     } catch (error) {

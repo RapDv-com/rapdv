@@ -9,10 +9,6 @@ export abstract class RapDvBaseEntity extends Model {
   @Column(DataType.UUID)
   id: string
 
-  get _id(): string {
-    return this.id
-  }
-
   @CreatedAt
   createdAt: Date
 
