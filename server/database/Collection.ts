@@ -79,14 +79,6 @@ export class Collection {
     return new SequelizeRepositoryAdapter(this.entityClass)
   }
 
-  public static areEntriesSame = (entryA, entryB) => Collection.getEntryId(entryA) === Collection.getEntryId(entryB)
-
-  public static getEntryId(entry): any {
-    if (!entry) return null
-    if (entry.id) return entry.id.toString()
-    return entry.toString()
-  }
-
   public static getAll = (): Collection[] => Collection.collections
 
   public static get = <T extends Collection>(name: string): T => {

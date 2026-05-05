@@ -28,12 +28,6 @@ export class Database {
 
   constructor() {}
 
-  public static getEntryId(entry): any {
-    if (!entry) return null
-    if (entry.id) return entry.id.toString()
-    return entry.toString()
-  }
-
   public static async createOrGetRef(instance: any, propertyName, createNew: () => Promise<any>, findById: (id) => Promise<any>): Promise<any> {
     if (!instance[propertyName]) {
       let newInstance = await createNew()
