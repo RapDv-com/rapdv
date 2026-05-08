@@ -12,7 +12,6 @@ export class Currency {
   public static PLN = "PLN"
   public static CAD = "CAD"
   public static JPY = "JPY"
-  public static BGN = "BGN"
   public static CZK = "CZK"
   public static DKK = "DKK"
   public static HUF = "HUF"
@@ -26,6 +25,7 @@ export class Currency {
   public static SGD = "SGD"
   public static AED = "AED"
   public static MYR = "MYR"
+  public static ISK = "ISK"
 
   public code: string
   public countryCode2Letters: string
@@ -37,9 +37,29 @@ export class Currency {
     const currencies = []
     currencies.push(new Currency(Currency.USD, "US", "$", "United States Dollar", true))
     currencies.push(new Currency(Currency.EUR, "EU", "€", "Euro", true))
+    currencies.push(new Currency(Currency.EUR, "AT", "€", "Euro", true))
+    currencies.push(new Currency(Currency.EUR, "BE", "€", "Euro", true))
+    currencies.push(new Currency(Currency.EUR, "BG", "€", "Euro", true))
+    currencies.push(new Currency(Currency.EUR, "HR", "€", "Euro", true))
+    currencies.push(new Currency(Currency.EUR, "CY", "€", "Euro", true))
+    currencies.push(new Currency(Currency.EUR, "EE", "€", "Euro", true))
+    currencies.push(new Currency(Currency.EUR, "FI", "€", "Euro", true))
+    currencies.push(new Currency(Currency.EUR, "FR", "€", "Euro", true))
+    currencies.push(new Currency(Currency.EUR, "DE", "€", "Euro", true))
+    currencies.push(new Currency(Currency.EUR, "GR", "€", "Euro", true))
+    currencies.push(new Currency(Currency.EUR, "IE", "€", "Euro", true))
+    currencies.push(new Currency(Currency.EUR, "IT", "€", "Euro", true))
+    currencies.push(new Currency(Currency.EUR, "LV", "€", "Euro", true))
+    currencies.push(new Currency(Currency.EUR, "LT", "€", "Euro", true))
+    currencies.push(new Currency(Currency.EUR, "LU", "€", "Euro", true))
+    currencies.push(new Currency(Currency.EUR, "MT", "€", "Euro", true))
+    currencies.push(new Currency(Currency.EUR, "NL", "€", "Euro", true))
+    currencies.push(new Currency(Currency.EUR, "PT", "€", "Euro", true))
+    currencies.push(new Currency(Currency.EUR, "SK", "€", "Euro", true))
+    currencies.push(new Currency(Currency.EUR, "SI", "€", "Euro", true))
+    currencies.push(new Currency(Currency.EUR, "ES", "€", "Euro", true))
     currencies.push(new Currency(Currency.AED, "AE", "د.إ", "United Arab Emirates Dirham", true))
     currencies.push(new Currency(Currency.AUD, "AU", "A$", "Australian Dollar", true))
-    currencies.push(new Currency(Currency.BGN, "BG", "лв", "Bulgarian Lev", false))
     currencies.push(new Currency(Currency.CAD, "CA", "C$", "Canadian Dollar", true))
     currencies.push(new Currency(Currency.CHF, "CH", "CHF", "Swiss Franc", true))
     currencies.push(new Currency(Currency.CZK, "CZ", "Kč", "Czech Koruna", false))
@@ -57,6 +77,7 @@ export class Currency {
     currencies.push(new Currency(Currency.SGD, "SG", "SG$", "Singapore Dollar", true))
     currencies.push(new Currency(Currency.THB, "TH", "฿", "Thai Baht", true))
     currencies.push(new Currency(Currency.TRY, "TR", "₺", "Turkish Lira", true))
+    currencies.push(new Currency(Currency.ISK, "IS", "kr", "Icelandic Króna", false))
     return currencies
   }
 
