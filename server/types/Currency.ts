@@ -33,7 +33,7 @@ export class Currency {
   public name: string
   public isSymbolInFront: boolean
 
-  public static getCurrencies = () => {
+  public static getCurrencies = (): Currency[] => {
     const currencies = []
     currencies.push(new Currency(Currency.USD, "US", "$", "United States Dollar", true))
     currencies.push(new Currency(Currency.EUR, "EU", "€", "Euro", true))
