@@ -28,6 +28,8 @@ import { Git } from "./system/Git"
 import { CollectionUserSession } from "./database/CollectionUserSession"
 import { PageMetadata } from "./pages/PageMetadata"
 import { DatabaseConnection } from "./database/DatabaseConnection"
+import * as http from "http"
+import session from "express-session"
 
 export type EndpointLogic = (req: Request, res: Response, next: NextFunction, app: RapDvApp, mailer: Mailer) => void
 export type TaskLogic = () => void
@@ -67,6 +69,7 @@ export abstract class RapDvApp {
   public abstract connectDatabase: (isProduction: boolean, entities: Function[]) => Promise<DatabaseConnection>
   public abstract getStorage: () => Promise<void>
   public abstract startRecurringTasks: (mailer: Mailer) => Promise<void>
+  public onServerReady = async (server: http.Server, sessionStore: session.Store): Promise<void> => {}
   
   protected MAX_FILES = 5
   protected MAX_FILE_SIZE_KB = 5120

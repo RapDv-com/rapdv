@@ -140,6 +140,8 @@ export class Server {
     const pageBase = new PageBase(appExpress, app)
     pageBase.setup()
 
+    await app.onServerReady(this.server, connection.sessionStore)
+
     // Set new app object
     this.appExpress = appExpress
     this.app = app
