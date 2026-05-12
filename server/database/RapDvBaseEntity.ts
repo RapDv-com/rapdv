@@ -5,7 +5,7 @@ import { Column, CreatedAt, DataType, Default, Model, PrimaryKey, UpdatedAt } fr
 
 export abstract class RapDvBaseEntity extends Model {
   @PrimaryKey
-  @Default(DataType.UUIDV4)
+  @Default(DataType.UUIDV1)
   @Column(DataType.UUID)
   id: string
 
