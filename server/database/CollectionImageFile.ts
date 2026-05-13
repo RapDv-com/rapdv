@@ -42,7 +42,7 @@ export class ImageFile extends RapDvBaseEntity {
       fileEntity = await collectionFile.findById(this.fileId)
     }
 
-    await this.remove()
+    await this.destroy()
 
     if (!!fileEntity) {
       await fileEntity.removeIfItsNotUsed()

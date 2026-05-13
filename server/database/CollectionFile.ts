@@ -87,7 +87,7 @@ export class File extends RapDvBaseEntity {
       }
     }
 
-    await this.remove()
+    await this.destroy()
     return true
   }
 

@@ -101,7 +101,7 @@ export class Collection {
     const collection = Collection.get(collectionName)
     const entry = await collection.findOne(queryData)
     if (!entry) return false
-    await entry.remove()
+    await entry.destroy()
     return true
   }
 
