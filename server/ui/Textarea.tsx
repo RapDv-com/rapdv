@@ -44,7 +44,7 @@ export class Textarea extends React.Component<Props & React.InputHTMLAttributes<
 
     const invalidFeedback = this.getInvalidFeedback()
     const isRequired = this.props.required
-    const optionalText = isRequired || this.props.readOnly ? "" : "(Optional)"
+    const optionalText = isRequired || this.props.readOnly ? "*" : ""
 
     return (
       <div className="mb-3">

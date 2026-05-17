@@ -40,7 +40,7 @@ export class Select extends React.Component<Props & React.SelectHTMLAttributes<H
 
     const invalidFeedback = this.getInvalidFeedback()
     const isRequired = this.props.required
-    const optionalText = isRequired || this.props.disabled ? "" : "(Optional)"
+    const optionalText = isRequired || this.props.disabled ? "*" : ""
 
     return (
       <div className="mb-3">

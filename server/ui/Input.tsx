@@ -57,7 +57,7 @@ export class Input extends React.Component<Props & React.InputHTMLAttributes<HTM
 
     const invalidFeedback = this.getInvalidFeedback()
     const isRequired = this.props.required
-    const optionalText = isRequired || this.props.readOnly || this.props.disabled ? "" : "(Optional)"
+    const optionalText = isRequired || this.props.readOnly || this.props.disabled ? "*" : ""
     const isFileUpload = otherProps.type === "file"
     const isCheckbox = otherProps.type === "checkbox"
     const isRadio = otherProps.type === "radio"
