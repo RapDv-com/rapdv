@@ -19,7 +19,7 @@ export class ButtonAjax extends React.Component<Props & React.FormHTMLAttributes
     const pjaxClass = noPjax ? "" : "pjax"
     
     return (
-      <form {...otherProps} className={pjaxClass} method={method ?? ReqType.Post} encType="multipart/form-data" noValidate>
+      <form {...otherProps} className={`needs-validation${pjaxClass ? ` ${pjaxClass}` : ""}`} method={method ?? ReqType.Post} encType="multipart/form-data" noValidate>
         <input type="hidden" name="_csrf" value="{{_csrf}}" />
         {!!params && Object.keys(params).map((key, index) => <input key={index} type="hidden" name={key} value={params[key]} />)}
         <button type="submit" className={className}>
