@@ -12,6 +12,7 @@ type Props = {
   itemsPerPage?: number
   keyPage?: string
   hideIfSinglePage?: boolean
+  className?: string
 }
 
 export class Paginator extends React.Component<Props> {
@@ -85,7 +86,7 @@ export class Paginator extends React.Component<Props> {
       this.queryString[key] = value
     }
 
-    return <PaginatorList className={`pagination`} center={this.props.center}>
+    return <PaginatorList className={`pagination${this.props.className ? ` ${this.props.className}` : ``}`} center={this.props.center}>
         {this.getHtmlElements()}
       </PaginatorList>
   }
