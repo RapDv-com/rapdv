@@ -356,6 +356,7 @@ export abstract class RapDvApp {
     restrictions?: (Role | UserRole | string)[],
     enableFilesUpload?: boolean
   ) => {
+    const logicCall = (req: Request, res: Response, next: NextFunction) => logic(req, res, next, this, this.mailer)
     const checkAuthorization = Auth.checkUserAuthorization(restrictions)
     const postSteps: any[] = [
       path,
@@ -366,11 +367,11 @@ export abstract class RapDvApp {
       checkAuthorization,
       this.beforeRouteIsRendered(restrictions),
       Auth.checkSystem,
-      (req: Request, res: Response, next: NextFunction) => logic(req, res, next, this, this.mailer)
+      logicCall
     ]
 
     if (reqType === ReqType.Get) {
-      this.router.get(path, lusca({ csrf: true }), checkAuthorization, this.beforeRouteIsRendered(restrictions), Auth.checkSystem, logic)
+      this.router.get(path, lusca({ csrf: true }), checkAuthorization, this.beforeRouteIsRendered(restrictions), Auth.checkSystem, logicCall)
     } else if (reqType === ReqType.Post) {
       this.router.post(...postSteps)
     } else if (reqType === ReqType.Put) {
