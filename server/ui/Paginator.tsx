@@ -13,6 +13,7 @@ type Props = {
   keyPage?: string
   hideIfSinglePage?: boolean
   className?: string
+  removeParams?: string[]
 }
 
 export class Paginator extends React.Component<Props> {
@@ -84,6 +85,12 @@ export class Paginator extends React.Component<Props> {
     for (let key in queryString) {
       let value = queryString[key]
       this.queryString[key] = value
+    }
+    
+    if (this.props.removeParams) {
+      for (const param of this.props.removeParams) {
+        delete this.queryString[param]
+      }
     }
 
     return <PaginatorList className={`pagination${this.props.className ? ` ${this.props.className}` : ``}`} center={this.props.center}>
