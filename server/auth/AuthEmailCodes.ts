@@ -47,7 +47,8 @@ export class AuthEmailCodes {
     firstName?: string,
     lastName?: string,
     role?: UserRole | string,
-    customVerificationUrl?: string
+    customVerificationUrl?: string,
+    sendCustomEmail?: (user, appBasicInfo: AppBasicInfo, mailer: Mailer, customVerificationUrl?: string) => Promise<string | undefined>
   ): Promise<any> {
     const self = this
     return new Promise<void>(async (resolve, reject) => {
@@ -75,7 +76,11 @@ export class AuthEmailCodes {
       }
 
       try {
-        await AuthEmailCodes.sendVerificationEmail(user, appBasicInfo, mailer, customVerificationUrl)
+        if (!!sendCustomEmail) {
+          await sendCustomEmail(user, appBasicInfo, mailer, customVerificationUrl)
+        } else {
+          await AuthEmailCodes.sendVerificationEmail(user, appBasicInfo, mailer, customVerificationUrl)
+        }
       } catch (error) {
         if (error) return reject(error)
       }
@@ -156,7 +161,7 @@ export class AuthEmailCodes {
       []
     )
 
-    // Update sent time, to allow user to receive it again if email fails
+    // Update sent time here, to allow user to receive it again if email fails
     user.verificationCodeEmailSentDate = new Date()
     user = await user.save()
 

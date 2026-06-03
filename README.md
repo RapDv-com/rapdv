@@ -51,6 +51,8 @@ Folders functions:
 ### Coding style
 - Every file needs to have name in PascalCase and be a class
 - All code should be writted in an object-oriented way, and all functions should be methods of a class
-- Don't use variables with single letter names, except for loop counters. Use descriptive names for variables and functions.
+- Don't use variables with single letter names, except for loop counters or common helper patterns like translations. Use descriptive names for variables and functions.
 - Don't use magic numbers, use constants with descriptive names instead.
 - No callback hell, use async/await instead of callbacks or promises
+- Use code comments only where absolutely necessary. In all cases, try to document code by using clear, descriptive names.
+- Keep your code as simple as possible

@@ -37,7 +37,7 @@ export class AppClient {
 
   setupPjax = () => {
     document.addEventListener("DOMContentLoaded", () => {
-      this.pjax = new Pjax({ elements: 'a:not([target="_blank"]):not(.noPjax)[href], form.pjax', selectors: ["title", "header", "main", "footer", "style"], cacheBust: false })
+      this.pjax = new Pjax({ elements: 'a:not([target="_blank"]):not(.noPjax)[href], form.pjax', selectors: ["head", "header", "main", "footer"], cacheBust: false })
       NProgress.configure({ parent: "body", showSpinner: false })
       this.pagesCtrl.setPjax(this.pjax)
       this.pagesCtrl.setupPage()
