@@ -5,12 +5,13 @@ import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { Collection } from "../database/Collection";
 import { CollectionUser, UserRole, UserStatus } from "../database/CollectionUser";
 import { Auth } from "./Auth";
+import type { RapDvApp, TranslateFn } from "../RapDvApp";
 
 export class AuthGoogle {
 
   private static DEBUG = false
 
-  public static configure = () => {
+  public static configure = (app: RapDvApp) => {
 
     if (!process.env.GOOGLE_CLIENT_ID) {
       console.warn("Google OAuth2 is not configured. GOOGLE_CLIENT_ID is missing.")
@@ -36,8 +37,9 @@ export class AuthGoogle {
       let pictureUrl: string = profile._json.picture;
 
       try {
+        const t = app.getTranslations(req)
         const user = await this.loginUsingSocialProvider(req, "google", id, email, firstName, lastName,
-          verifiedEmail, pictureUrl);
+          verifiedEmail, pictureUrl, t);
         return done(null, user);
       } catch (error) {
         return done(error, null);
@@ -46,7 +48,7 @@ export class AuthGoogle {
     ));
   }
 
-  public static async loginUsingSocialProvider(req, provider: string, id: string, email: string, firstName: string, lastName: string, verifiedEmail: boolean, pictureUrl: string) {
+  public static async loginUsingSocialProvider(req, provider: string, id: string, email: string, firstName: string, lastName: string, verifiedEmail: boolean, pictureUrl: string, t: TranslateFn) {
 
     const collectionUser = Collection.get("User") as CollectionUser
 
@@ -63,7 +65,7 @@ export class AuthGoogle {
         existingUser.emailVerified = true;
         await existingUser.save();
       }
-      const userLoggedIn = await Auth.logInUser(req, existingUser)
+      const userLoggedIn = await Auth.logInUser(req, existingUser, t)
       return userLoggedIn;
     }
     const user = await CollectionUser.createUserForAuthEmailCodes(email, verifiedEmail, firstName ?? "", lastName ?? "", UserRole.User, UserStatus.Live, "")
@@ -72,7 +74,7 @@ export class AuthGoogle {
     if (pictureUrl) await user.setPhotoFromUrl(pictureUrl);
     await user.save();
 
-    const userLoggedIn = await Auth.logInUser(req, user)
+    const userLoggedIn = await Auth.logInUser(req, user, t)
     return userLoggedIn;
   }
 }

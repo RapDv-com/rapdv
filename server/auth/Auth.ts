@@ -8,6 +8,7 @@ import { Role } from "../Role"
 import { FlashType, Request } from "../server/Request"
 import { CollectionUserSession } from "../database/CollectionUserSession"
 import { Network } from "../network/Network"
+import type { RapDvApp, TranslateFn } from "../RapDvApp"
 import passport from "passport"
 
 export class Auth {
@@ -55,20 +56,21 @@ export class Auth {
     return false
   }
 
-  public static checkUserAuthorization = (rolesAllowed: (Role | UserRole | string)[]) => async (req: Request, res: Response, next: NextFunction) => {
+  public static checkUserAuthorization = (rolesAllowed: (Role | UserRole | string)[], app: RapDvApp) => async (req: Request, res: Response, next: NextFunction) => {
+    const t = app.getTranslations(req, res)
     const user = !!req?.user ? await CollectionUser.findUserById(req.user.id) : undefined
 
     if (!!rolesAllowed && rolesAllowed.includes(Auth.SETUP)) {
       // Check if setup is still on-going
       const system = await CollectionSystem.get()
       if (system.isSetupFinished) {
-        req.flash(FlashType.Warning, "Setup is finished. Restart the app in order to use this route for your own purposes.")
+        req.flash(FlashType.Warning, t("Setup is finished. Restart the app in order to use this route for your own purposes."))
         return res.redirect("/")
       }
     }
 
     if (!!user && user.status === UserStatus.Banned) {
-      req.flash(FlashType.Errors, "Your account was deactivated.")
+      req.flash(FlashType.Errors, t("Your account was deactivated."))
 
       user.verificationCodeEmailSentDate = new Date(0) // Allow to log in again instantly
       await user?.save()
@@ -78,7 +80,7 @@ export class Auth {
     }
 
     if (!Auth.doesUserHaveAccess(user, rolesAllowed)) {
-      req.flash(FlashType.Errors, "You don't have an access to this page.")
+      req.flash(FlashType.Errors, t("You don't have an access to this page."))
       return res.redirect("/")
     } else {
       return next()
@@ -106,7 +108,7 @@ export class Auth {
     return true
   }
 
-  public static logInUser(req: Request, user: any): Promise<any> {
+  public static logInUser(req: Request, user: any, t: TranslateFn): Promise<any> {
     const self = this
     return new Promise<void>(async (resolve, reject) => {
       req.logIn(user, async (error) => {
@@ -114,7 +116,7 @@ export class Auth {
 
         if (user.isBanned()) {
           await self.logout(req)
-          return reject("Your account was deactivated. Please contact support for more information.")
+          return reject(t("Your account was deactivated. Please contact support for more information."))
         }
 
         if (error) {

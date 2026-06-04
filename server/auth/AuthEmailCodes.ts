@@ -6,7 +6,7 @@ import { Collection } from "../database/Collection"
 import { CheckEmail, EmailExistance } from "../mailer/CheckEmail";
 import { Auth } from "./Auth"
 import { Mailer } from "../mailer/Mailer";
-import { AppBasicInfo } from "../RapDvApp";
+import { AppBasicInfo, TranslateFn } from "../RapDvApp";
 
 export class AuthEmailCodes {
 
@@ -88,7 +88,7 @@ export class AuthEmailCodes {
     })
   }
 
-  public static verifyEmail = async (req: Request, email: string, code: string): Promise<void> => {
+  public static verifyEmail = async (req: Request, email: string, code: string, t: TranslateFn): Promise<void> => {
 
     const collectionUser = Collection.get("User") as CollectionUser
     try {
@@ -120,7 +120,7 @@ export class AuthEmailCodes {
       user.verificationCodeEmailSentDate = new Date(0) // Allow to log in again instantly
       await user.save()
 
-      await Auth.logInUser(req, user)
+      await Auth.logInUser(req, user, t)
     } catch (error) {
       throw error
     }

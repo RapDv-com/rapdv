@@ -33,6 +33,7 @@ import session from "express-session"
 
 export type EndpointLogic = (req: Request, res: Response, next: NextFunction, app: RapDvApp, mailer: Mailer) => void
 export type TaskLogic = () => void
+export type TranslateFn = (text: string) => string
 export type SetText = (req: Request, res: Response) => Promise<string>
 export type SetBoolean = (req: Request, res: Response) => Promise<boolean>
 
@@ -357,7 +358,7 @@ export abstract class RapDvApp {
     enableFilesUpload?: boolean
   ) => {
     const logicCall = (req: Request, res: Response, next: NextFunction) => logic(req, res, next, this, this.mailer)
-    const checkAuthorization = Auth.checkUserAuthorization(restrictions)
+    const checkAuthorization = Auth.checkUserAuthorization(restrictions, this)
     const postSteps: any[] = [
       path,
       bodyParser.json(),
@@ -396,7 +397,7 @@ export abstract class RapDvApp {
     skipCsrfCheck?: boolean
   ) => {
     // Require user to be logged in
-    const checkAuthorization = Auth.checkUserAuthorization(restrictions)
+    const checkAuthorization = Auth.checkUserAuthorization(restrictions, this)
     const executeLogic = (req: Request, res, next) => logic(req, res, next, this, this.mailer)
     const checkCsrf = !skipCsrfCheck
 
@@ -491,6 +492,10 @@ export abstract class RapDvApp {
   public getCustomUserProps = (): any => ({})
 
   public createDatabase = () => new Database()
+
+  public getTranslations = (req: Request, res?: Response): TranslateFn => {
+    return (text: string) => text
+  }
 
   public redirectToPage = (req: Request, res: Response, next: NextFunction, url: string, flashMsg?: string, flashType: FlashType = FlashType.Warning) => {
 
