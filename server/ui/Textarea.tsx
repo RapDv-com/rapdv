@@ -2,7 +2,9 @@
 
 import { Request } from "express"
 import React, { ReactNode } from "react"
+import path from "path"
 import { TextUtils } from "../text/TextUtils"
+import { Translation } from "../lang/Translation"
 
 type Props = {
   req?: Request
@@ -10,21 +12,27 @@ type Props = {
   label?: string
   hideLabel?: boolean
   rows?: number
+  lang?: string
 }
 export class Textarea extends React.Component<Props & React.InputHTMLAttributes<HTMLTextAreaElement>> {
 
+  private static DEFAULT_LANG = "en"
+
   getInvalidFeedback = () => {
-    let invalidFeedback = []
+    const translation = new Translation(this.props.lang ?? Textarea.DEFAULT_LANG, path.join(__dirname, "Textarea.lang.csv"))
+    const t = translation.get.bind(translation)
+
+    const invalidFeedback = []
 
     if (this.props.required) {
-      invalidFeedback.push(`Field is required`)
+      invalidFeedback.push(t("Field is required"))
     }
     if (this.props.minLength !== undefined && this.props.maxLength !== undefined) {
-      invalidFeedback.push(`Field needs to be between ${this.props.minLength} and ${this.props.maxLength} characters`)
+      invalidFeedback.push(t("Field needs to be between {min} and {max} characters").replace("{min}", String(this.props.minLength)).replace("{max}", String(this.props.maxLength)))
     } else if (this.props.maxLength !== undefined) {
-      invalidFeedback.push(`Field needs to be at most ${this.props.maxLength} characters`)
+      invalidFeedback.push(t("Field needs to be at most {max} characters").replace("{max}", String(this.props.maxLength)))
     } else if (this.props.minLength !== undefined) {
-      invalidFeedback.push(`Field needs to be at least ${this.props.minLength} characters`)
+      invalidFeedback.push(t("Field needs to be at least {min} characters").replace("{min}", String(this.props.minLength)))
     }
 
     return invalidFeedback.map((entry, index) => <div key={index}>{entry}</div>)
@@ -32,7 +40,7 @@ export class Textarea extends React.Component<Props & React.InputHTMLAttributes<
 
 
   render(): ReactNode | string {
-    const { name, placeholder, children, value, hideLabel, req, className, label, ...otherProps } = this.props
+    const { name, placeholder, children, value, hideLabel, req, className, label, lang, ...otherProps } = this.props
     const valueFromReq = !!req ? req.body[name] : undefined // Get previous value from request
 
     let placeholderText = placeholder

@@ -2,8 +2,10 @@
 
 import { Request } from "express"
 import React, { ReactNode } from "react"
+import path from "path"
 import { TextUtils } from "../text/TextUtils"
 import { Types } from "../types/Types"
+import { Translation } from "../lang/Translation"
 
 export type Option = {
   value: string
@@ -16,20 +18,27 @@ type Props = {
   options: string[] | Option[]
   hideLabel?: boolean
   className?: string
+  lang?: string
 }
 export class Select extends React.Component<Props & React.SelectHTMLAttributes<HTMLSelectElement>> {
+
+  private static DEFAULT_LANG = "en"
+
   getInvalidFeedback = () => {
-    let invalidFeedback = []
+    const translation = new Translation(this.props.lang ?? Select.DEFAULT_LANG, path.join(__dirname, "Select.lang.csv"))
+    const t = translation.get.bind(translation)
+
+    const invalidFeedback = []
 
     if (this.props.required) {
-      invalidFeedback.push(`Field is required`)
+      invalidFeedback.push(t("Field is required"))
     }
 
     return invalidFeedback.map((entry, index) => <div key={index}>{entry}</div>)
   }
 
   render(): ReactNode | string {
-    const { name, placeholder, value, req, options, hideLabel, className, ...otherProps } = this.props
+    const { name, placeholder, value, req, options, hideLabel, className, lang, ...otherProps } = this.props
     const valueFromReq = !!req ? req.body[name] : undefined // Get previous value from request
 
     let placeholderText = placeholder
