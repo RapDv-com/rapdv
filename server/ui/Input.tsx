@@ -2,51 +2,60 @@
 
 import { Request } from "express"
 import React, { ReactNode } from "react"
+import path from "path"
 import { TextUtils } from "../text/TextUtils"
+import { Translation } from "../lang/Translation"
 
 type Props = {
   req?: Request
   separateLabel?: boolean
   marginBottomClass?: string
   label?: string | ReactNode | Element
+  lang?: string
 }
 export class Input extends React.Component<Props & React.InputHTMLAttributes<HTMLInputElement>> {
+
+  private static DEFAULT_LANG = "en"
+
   getInvalidFeedback = () => {
-    let invalidFeedback = []
+    const translation = new Translation(this.props.lang ?? Input.DEFAULT_LANG, path.join(__dirname, "Input.lang.csv"))
+    const t = translation.get.bind(translation)
+
+    const invalidFeedback = []
 
     if (this.props.required) {
-      invalidFeedback.push(`Field is required`)
+      invalidFeedback.push(t("Field is required"))
     }
     if (this.props.minLength !== undefined && this.props.maxLength !== undefined) {
-      invalidFeedback.push(`Field needs to be between ${this.props.minLength} and ${this.props.maxLength} characters`)
+      invalidFeedback.push(t("Field needs to be between {min} and {max} characters").replace("{min}", String(this.props.minLength)).replace("{max}", String(this.props.maxLength)))
     } else if (this.props.maxLength !== undefined) {
-      invalidFeedback.push(`Field needs to be at most ${this.props.maxLength} characters`)
+      invalidFeedback.push(t("Field needs to be at most {max} characters").replace("{max}", String(this.props.maxLength)))
     } else if (this.props.minLength !== undefined) {
-      invalidFeedback.push(`Field needs to be at least ${this.props.minLength} characters`)
+      invalidFeedback.push(t("Field needs to be at least {min} characters").replace("{min}", String(this.props.minLength)))
     }
     if (this.props.type === "email") {
-      invalidFeedback.push(`Field needs to be a valid email`)
+      invalidFeedback.push(t("Field needs to be a valid email"))
     }
     if (this.props.type === "number") {
-      invalidFeedback.push(`Field needs to be a valid number`)
+      invalidFeedback.push(t("Field needs to be a valid number"))
     }
     if (this.props.type === "url") {
-      invalidFeedback.push(`Field needs to be a valid URL`)
+      invalidFeedback.push(t("Field needs to be a valid URL"))
     }
 
     if (this.props.min !== undefined && this.props.max !== undefined) {
-      invalidFeedback.push(`Field needs to be between ${this.props.min} and ${this.props.max}`)
+      invalidFeedback.push(t("Field needs to be between {min} and {max}").replace("{min}", String(this.props.min)).replace("{max}", String(this.props.max)))
     } else if (this.props.max !== undefined) {
-      invalidFeedback.push(`Field needs to be at most ${this.props.max}`)
+      invalidFeedback.push(t("Field needs to be at most {max}").replace("{max}", String(this.props.max)))
     } else if (this.props.min !== undefined) {
-      invalidFeedback.push(`Field needs to be at least ${this.props.min}`)
+      invalidFeedback.push(t("Field needs to be at least {min}").replace("{min}", String(this.props.min)))
     }
 
     return invalidFeedback.map((entry, index) => <div key={index}>{entry}</div>)
   }
 
   render(): ReactNode | string {
-    const { name, placeholder, value, req, separateLabel, marginBottomClass, label, ...otherProps } = this.props
+    const { name, placeholder, value, req, separateLabel, marginBottomClass, label, lang, ...otherProps } = this.props
     const valueFromReq = !!req ? req.body[name] : undefined // Get previous value from request
 
     let placeholderText = placeholder
