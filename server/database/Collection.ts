@@ -3,6 +3,8 @@
 import 'reflect-metadata'
 import { TextUtils } from '../text/TextUtils'
 
+export type Sort = [string, 'ASC' | 'DESC'][]
+
 export class Collection {
   public entityClass: Function
 
@@ -101,7 +103,7 @@ export class Collection {
     })
   }
 
-  public findOne = async (queryData: any, populate?: string[], sort?: any): Promise<any> => {
+  public findOne = async (queryData: any, populate?: string[], sort?: Sort): Promise<any> => {
     try {
       const options: any = { where: queryData || {} }
       const include = this.buildInclude(populate)
@@ -149,7 +151,7 @@ export class Collection {
     }
   }
 
-  public findAll = async (queryData?: any, from?: number, limit?: number, populate?: string[], sort?: any): Promise<any[]> => {
+  public findAll = async (queryData?: any, from?: number, limit?: number, populate?: string[], sort?: Sort): Promise<any[]> => {
     try {
       const options: any = { where: queryData || {} }
       const include = this.buildInclude(populate)
