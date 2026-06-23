@@ -2,7 +2,7 @@
 
 import 'reflect-metadata'
 import { Sequelize } from 'sequelize-typescript'
-import { Collection } from './Collection'
+import { Collection, Sort } from './Collection'
 import { DatabaseConnection } from './DatabaseConnection'
 import { DatabaseMigration } from './migrations/DatabaseMigration'
 
@@ -17,8 +17,8 @@ export class Database {
   public static isTest: boolean = false
 
   public static IGNORE_NUMBER: number = -1
-  public static SORT_NEWEST_FIRST = [['createdAt', 'DESC']]
-  public static SORT_OLDEST_FIRST = [['createdAt', 'ASC']]
+  public static SORT_NEWEST_FIRST: Sort = [['createdAt', 'DESC']]
+  public static SORT_OLDEST_FIRST: Sort = [['createdAt', 'ASC']]
 
   public static ASC = 'ASC'
   public static DESC = 'DESC'
