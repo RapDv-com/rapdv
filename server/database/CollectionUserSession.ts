@@ -48,11 +48,10 @@ export class CollectionUserSession extends Collection {
   public static createUserSession = async (user: any, sessionId: string, ip: string, userAgent: string): Promise<any> => {
     await CollectionUserSession.removeSession(sessionId)
 
-    const collectionUserSession = Collection.get('UserSession') as CollectionUserSession
     let expiresDate = new Date(new Date().getTime() + CollectionUserSession.DEFAULT_USER_EXPERIATION_TIME_MS)
     const userId = user && user.id ? user.id.toString() : user?.toString()
 
-    const newInstance = collectionUserSession.repository.create({
+    const newInstance = UserSession.build({
       userId,
       sessionId,
       ip,
@@ -60,19 +59,18 @@ export class CollectionUserSession extends Collection {
       expiresDate,
     })
 
-    await collectionUserSession.repository.save(newInstance)
+    await newInstance.save()
     return newInstance
   }
 
   public static findSessions = async (user: any): Promise<any> => {
     if (!user) return null
-    const collectionUserSession = Collection.get('UserSession') as CollectionUserSession
 
     try {
       const userId = user && user.id ? user.id.toString() : user?.toString()
-      let result = await collectionUserSession.repository.find({
+      let result = await UserSession.findAll({
         where: { userId },
-        order: { createdAt: 'ASC' },
+        order: [['createdAt', 'ASC']],
       })
       return result
     } catch (error) {
@@ -83,13 +81,12 @@ export class CollectionUserSession extends Collection {
 
   public static findUserSession = async (user: any, sessionId: string): Promise<any> => {
     if (!user) return null
-    const collectionUserSession = Collection.get('UserSession') as CollectionUserSession
 
     try {
       const userId = user && user.id ? user.id.toString() : user?.toString()
-      let result = await collectionUserSession.repository.findOne({
+      let result = await UserSession.findOne({
         where: { userId, sessionId },
-        order: { createdAt: 'ASC' },
+        order: [['createdAt', 'ASC']],
       })
       return result
     } catch (error) {
@@ -100,12 +97,11 @@ export class CollectionUserSession extends Collection {
 
   public static findSession = async (sessionId: string): Promise<any> => {
     if (!sessionId) return null
-    const collectionUserSession = Collection.get('UserSession') as CollectionUserSession
 
     try {
-      let result = await collectionUserSession.repository.findOne({
+      let result = await UserSession.findOne({
         where: { sessionId },
-        order: { createdAt: 'ASC' },
+        order: [['createdAt', 'ASC']],
       })
       return result
     } catch (error) {
@@ -116,11 +112,10 @@ export class CollectionUserSession extends Collection {
 
   public static removeUserSession = async (user: any, sessionId: string) => {
     if (!user) return null
-    const collectionUserSession = Collection.get('UserSession') as CollectionUserSession
 
     try {
       const userId = user && user.id ? user.id.toString() : user?.toString()
-      let result = await collectionUserSession.repository.delete({ userId, sessionId })
+      let result = await UserSession.destroy({ where: { userId, sessionId } })
       return result
     } catch (error) {
       console.warn('Couldn\'t complete CollectionUserSession.removeUserSession. ' + error)
@@ -130,10 +125,9 @@ export class CollectionUserSession extends Collection {
 
   public static removeSession = async (sessionId: string) => {
     if (!sessionId) return null
-    const collectionUserSession = Collection.get('UserSession') as CollectionUserSession
 
     try {
-      let result = await collectionUserSession.repository.delete({ sessionId })
+      let result = await UserSession.destroy({ where: { sessionId } })
       return result
     } catch (error) {
       console.warn('Couldn\'t complete CollectionUserSession.removeSession. ' + error)
@@ -143,11 +137,10 @@ export class CollectionUserSession extends Collection {
 
   public static removeAllUserSessions = async (user: any) => {
     if (!user) return null
-    const collectionUserSession = Collection.get('UserSession') as CollectionUserSession
 
     try {
       const userId = user && user.id ? user.id.toString() : user?.toString()
-      let result = await collectionUserSession.repository.delete({ userId })
+      let result = await UserSession.destroy({ where: { userId } })
       return result
     } catch (error) {
       console.warn('Couldn\'t complete CollectionUserSession.removeAllUserSessions. ' + error)
@@ -156,11 +149,9 @@ export class CollectionUserSession extends Collection {
   }
 
   public static removeAllExpiredSessions = async () => {
-    const collectionUserSession = Collection.get('UserSession') as CollectionUserSession
-
     try {
-      const result = await collectionUserSession.repository.delete({
-        expiresDate: { [Op.lt]: new Date() },
+      const result = await UserSession.destroy({
+        where: { expiresDate: { [Op.lt]: new Date() } },
       })
       return result
     } catch (error) {

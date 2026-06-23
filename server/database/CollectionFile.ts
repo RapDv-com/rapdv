@@ -298,7 +298,7 @@ export class CollectionFile extends Collection {
           const s3 = CollectionFile.getS3()
           await s3.send(new PutObjectCommand(params))
 
-          file = self.repository.create({
+          file = File.build({
             key,
             isPublic,
             s3Key: key,
@@ -311,7 +311,7 @@ export class CollectionFile extends Collection {
           })
         } else {
           const data = await readData()
-          file = self.repository.create({
+          file = File.build({
             key,
             isPublic,
             data,
@@ -325,7 +325,7 @@ export class CollectionFile extends Collection {
         }
 
         try {
-          await self.repository.save(file)
+          await file.save()
           resolve(file)
         } catch (error) {
           reject(error)
@@ -359,7 +359,7 @@ export class CollectionFile extends Collection {
     if (!key) return null
 
     try {
-      let result = await this.repository.findOne({ where: { key }, order: { createdAt: 'ASC' } })
+      let result = await File.findOne({ where: { key }, order: [['createdAt', 'ASC']] })
       return result
     } catch (error) {
       console.warn('Couldn\'t complete CollectionFile.findByKey. ' + error)
@@ -372,14 +372,14 @@ export class CollectionFile extends Collection {
       throw new Error('Not enough data to find duplicate.')
     }
 
-    return this.repository.findOne({
+    return File.findOne({
       where: {
         encoding: encoding as string,
         mimetype: mimetype as string,
         size: size as number,
         md5: md5 as string,
       },
-      order: { createdAt: 'ASC' },
+      order: [['createdAt', 'ASC']],
     })
   }
 
@@ -388,7 +388,7 @@ export class CollectionFile extends Collection {
 
     try {
       const idStr = id.id ? id.id.toString() : id.toString()
-      let result = await this.repository.findOne({ where: { id: idStr }, order: { createdAt: 'ASC' } })
+      let result = await File.findOne({ where: { id: idStr }, order: [['createdAt', 'ASC']] })
       return result
     } catch (error) {
       console.warn('Couldn\'t complete CollectionFile.findById. ' + error)

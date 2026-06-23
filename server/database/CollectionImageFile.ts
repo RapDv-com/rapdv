@@ -33,8 +33,7 @@ export class ImageFile extends RapDvBaseEntity {
   isPublic: boolean
 
   async removeWithFile(): Promise<any> {
-    const collectionImageFile = Collection.get(CollectionImageFile.NAME) as CollectionImageFile
-    let found = await collectionImageFile.repository.find({ where: { fileId: this.fileId } })
+    let found = await ImageFile.findAll({ where: { fileId: this.fileId } })
     let fileEntity: File | null = null
 
     if (found.length == 1) {
@@ -120,14 +119,14 @@ export class CollectionImageFile extends Collection {
 
     const collectionImageFile = Collection.get(CollectionImageFile.NAME) as CollectionImageFile
     const key = await collectionImageFile.generateKey(null, name, collectionImageFile.findByKey)
-    const imageFile = collectionImageFile.repository.create({
+    const imageFile = ImageFile.build({
       key,
       nameDisplayed: name,
       fileId: file.id,
       isPublic,
     })
 
-    await collectionImageFile.repository.save(imageFile)
+    await imageFile.save()
     return imageFile
   }
 

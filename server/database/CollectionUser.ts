@@ -201,8 +201,7 @@ export class CollectionUser extends Collection {
     notes: string
   ): Promise<any> => {
     try {
-      const collectionUser = Collection.get('User') as CollectionUser
-      const newInstance = collectionUser.repository.create({
+      const newInstance = User.build({
         email,
         emailVerified,
         verificationCodeEmailSentDate: new Date(0),
@@ -215,7 +214,7 @@ export class CollectionUser extends Collection {
         failedLoginAttempts: 0,
         lastFailedLoginAttempt: new Date(0),
       })
-      await collectionUser.repository.save(newInstance)
+      await newInstance.save()
       return newInstance
     } catch (error) {
       let errorMsg = 'Couldn\'t create user. ' + error
@@ -234,8 +233,7 @@ export class CollectionUser extends Collection {
     notes: string
   ): Promise<any> => {
     try {
-      const collectionUser = Collection.get('User') as CollectionUser
-      const newInstance = collectionUser.repository.create({
+      const newInstance = User.build({
         email,
         emailVerified,
         verificationCodeEmailSentDate: new Date(0),
@@ -247,7 +245,7 @@ export class CollectionUser extends Collection {
         lastFailedLoginAttempt: new Date(0),
         notes,
       })
-      await collectionUser.repository.save(newInstance)
+      await newInstance.save()
       return newInstance
     } catch (error) {
       let errorMsg = 'Couldn\'t create user. ' + error

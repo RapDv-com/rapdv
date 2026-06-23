@@ -1,82 +1,15 @@
 // Copyright (C) Konrad Gadzinowski
 
 import 'reflect-metadata'
-import { Op } from 'sequelize'
 import { TextUtils } from '../text/TextUtils'
-
-class SequelizeRepositoryAdapter {
-  constructor(private modelClass: any) {}
-
-  private translateOrder(order: any): any[] {
-    if (!order) return [['createdAt', 'DESC']]
-    return Object.entries(order).map(([key, value]) => [key, value])
-  }
-
-  private translateOptions(opts: any): any {
-    const seqOpts: any = {}
-
-    if (opts.where) seqOpts.where = opts.where
-
-    if (opts.order) {
-      seqOpts.order = this.translateOrder(opts.order)
-    }
-
-    if (opts.relations?.length) {
-      seqOpts.include = opts.relations.map((rel: string) => {
-        const assoc = this.modelClass.associations?.[rel]
-        if (assoc) return { model: assoc.target, as: rel }
-        return rel
-      })
-    }
-
-    if (opts.skip !== undefined) seqOpts.offset = opts.skip
-    if (opts.take !== undefined) seqOpts.limit = opts.take
-
-    return seqOpts
-  }
-
-  create(data?: any) {
-    return this.modelClass.build(data || {})
-  }
-
-  async save(entity: any) {
-    return entity.save()
-  }
-
-  async find(opts: any = {}) {
-    return this.modelClass.findAll(this.translateOptions(opts))
-  }
-
-  async findOne(opts: any = {}) {
-    return this.modelClass.findOne(this.translateOptions(opts))
-  }
-
-  async delete(where: any) {
-    return this.modelClass.destroy({ where })
-  }
-
-  async remove(entity: any) {
-    return entity.destroy()
-  }
-
-  async count(opts: any = {}) {
-    const seqOpts: any = {}
-    if (opts.where) seqOpts.where = opts.where
-    return this.modelClass.count(seqOpts)
-  }
-
-  createQueryBuilder(alias: string): never {
-    throw new Error(`createQueryBuilder('${alias}') is not supported with Sequelize. Rewrite the query using Op.like / Op.or.`)
-  }
-}
 
 export class Collection {
   public entityClass: Function
 
   public static collections = []
 
-  get repository(): SequelizeRepositoryAdapter {
-    return new SequelizeRepositoryAdapter(this.entityClass)
+  public get model(): any {
+    return this.entityClass as any
   }
 
   public static getAll = (): Collection[] => Collection.collections
@@ -107,7 +40,7 @@ export class Collection {
 
   public static deleteEntries = async (collectionName: string, queryData: any): Promise<boolean> => {
     const collection = Collection.get(collectionName)
-    await collection.repository.delete(collection.translateQuery(queryData))
+    await collection.model.destroy({ where: queryData })
     return true
   }
 
@@ -135,8 +68,8 @@ export class Collection {
     try {
       const logCollection = Collection.collections['Log']
       if (!logCollection) return null
-      const log = logCollection.repository.create({ title, type, description })
-      await logCollection.repository.save(log)
+      const log = logCollection.model.build({ title, type, description })
+      await log.save()
       return log
     } catch (e) {
       console.error('Couldn\'t save log: ' + e)
@@ -159,67 +92,22 @@ export class Collection {
 
   public getName = (): string => this.name
 
-  public translateQuery = (queryData: any): any => {
-    if (!queryData) return {}
-
-    let result: any = {}
-
-    // Get entity associations for relation detection
-    const associations: any = (this.entityClass as any).associations || {}
-
-    for (const key in queryData) {
-      const value = queryData[key]
-
-      // Check if this is a relation field (association)
-      if (associations[key]) {
-        const assoc = associations[key]
-        const idKey = assoc.foreignKey || (key + 'Id')
-        if (value === null || value === undefined) {
-          result[idKey] = null
-        } else if (value && typeof value === 'object' && value.id) {
-          result[idKey] = value.id.toString()
-        } else {
-          result[idKey] = value.toString()
-        }
-        continue
-      }
-
-      if (value === null || value === undefined) {
-        result[key] = value
-      } else if (typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date)) {
-        if (value.$lt !== undefined) result[key] = { [Op.lt]: value.$lt }
-        else if (value.$gt !== undefined) result[key] = { [Op.gt]: value.$gt }
-        else if (value.$in !== undefined) result[key] = { [Op.in]: value.$in }
-        else if (value.$ne !== undefined) result[key] = { [Op.ne]: value.$ne }
-        else result[key] = value
-      } else {
-        result[key] = value
-      }
-    }
-
-    return result
-  }
-
-  private translateSort = (sort: any): any => {
-    if (!sort) return { createdAt: 'DESC' }
-
-    let result: any = {}
-    for (const key in sort) {
-      result[key] = sort[key] === -1 || sort[key] === 'DESC' ? 'DESC' : 'ASC'
-    }
-    return result
+  private buildInclude = (populate?: string[]): any[] | undefined => {
+    if (!populate || populate.length === 0) return undefined
+    return populate.map((relationName) => {
+      const association = this.model.associations?.[relationName]
+      if (association) return { model: association.target, as: relationName }
+      return relationName
+    })
   }
 
   public findOne = async (queryData: any, populate?: string[], sort?: any): Promise<any> => {
     try {
-      const where = this.translateQuery(queryData)
-      const order = sort ? this.translateSort(sort) : undefined
-      const result = await this.repository.findOne({
-        where,
-        relations: populate,
-        order,
-      })
-      return result
+      const options: any = { where: queryData || {} }
+      const include = this.buildInclude(populate)
+      if (include) options.include = include
+      if (sort) options.order = sort
+      return await this.model.findOne(options)
     } catch (error) {
       console.warn('Couldn\'t complete Collection.findOne. ' + error)
       return null
@@ -227,43 +115,21 @@ export class Collection {
   }
 
   public findLast = async (queryData: any, populate?: string[]): Promise<any> => {
-    try {
-      const where = this.translateQuery(queryData)
-      const result = await this.repository.findOne({
-        where,
-        relations: populate,
-        order: { createdAt: 'DESC' },
-      })
-      return result
-    } catch (error) {
-      console.warn('Couldn\'t complete Collection.findLast. ' + error)
-      return null
-    }
+    return this.findOne(queryData, populate, [['createdAt', 'DESC']])
   }
 
   public findOldest = async (queryData: any, populate?: string[]): Promise<any> => {
-    try {
-      const where = this.translateQuery(queryData)
-      const result = await this.repository.findOne({
-        where,
-        relations: populate,
-        order: { createdAt: 'ASC' },
-      })
-      return result
-    } catch (error) {
-      console.warn('Couldn\'t complete Collection.findOldest. ' + error)
-      return null
-    }
+    return this.findOne(queryData, populate, [['createdAt', 'ASC']])
   }
 
   public create = (): any => {
-    return this.repository.create()
+    return this.model.build({})
   }
 
   public findOneOrCreate = async (queryData: any, populate?: string[]): Promise<any> => {
     const existing = await this.findOne(queryData, populate)
     if (!!existing) return existing
-    const entity = this.repository.create()
+    const entity = this.model.build({})
     Object.assign(entity, queryData)
     return entity
   }
@@ -273,11 +139,10 @@ export class Collection {
 
     try {
       const idStr = id.id ? id.id.toString() : id.toString()
-      const result = await this.repository.findOne({
-        where: { id: idStr },
-        relations: populate,
-      })
-      return result
+      const options: any = { where: { id: idStr } }
+      const include = this.buildInclude(populate)
+      if (include) options.include = include
+      return await this.model.findOne(options)
     } catch (error) {
       console.warn('Couldn\'t complete Collection.findById. ' + error)
       return null
@@ -286,15 +151,14 @@ export class Collection {
 
   public findAll = async (queryData?: any, from?: number, limit?: number, populate?: string[], sort?: any): Promise<any[]> => {
     try {
-      const where = queryData ? this.translateQuery(queryData) : {}
-      const order = sort ? this.translateSort(sort) : undefined
+      const options: any = { where: queryData || {} }
+      const include = this.buildInclude(populate)
+      if (include) options.include = include
+      if (sort) options.order = sort
+      if (from !== undefined) options.offset = from
+      if (limit !== undefined && limit > 0) options.limit = limit
 
-      const options: any = { where, order, relations: populate }
-      if (from !== undefined) options.skip = from
-      if (limit !== undefined && limit > 0) options.take = limit
-
-      const result = await this.repository.find(options)
-      return result
+      return await this.model.findAll(options)
     } catch (error) {
       console.warn('Couldn\'t complete Collection.findAll. ' + error)
       return null
@@ -303,9 +167,7 @@ export class Collection {
 
   public count = async (queryData?: any): Promise<number> => {
     try {
-      const where = queryData ? this.translateQuery(queryData) : {}
-      const result = await this.repository.count({ where })
-      return result
+      return await this.model.count({ where: queryData || {} })
     } catch (error) {
       console.warn('Couldn\'t complete Collection.count. ' + error)
       return null
@@ -315,7 +177,7 @@ export class Collection {
   public save = async (data: any): Promise<any> => {
     let entry
     if (!data.id) {
-      entry = this.repository.create(data)
+      entry = this.model.build(data)
     } else {
       const id = data.id
       entry = await this.findById(id)
@@ -332,7 +194,7 @@ export class Collection {
       }
     }
 
-    await this.repository.save(entry)
+    await entry.save()
     return entry
   }
 

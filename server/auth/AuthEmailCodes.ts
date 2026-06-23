@@ -1,5 +1,6 @@
 // Copyright (C) Konrad Gadzinowski
 
+import { Op } from "sequelize"
 import { CollectionUser, UserRole, UserStatus } from "../database/CollectionUser"
 import { Request } from "../server/Request"
 import { Collection } from "../database/Collection"
@@ -103,7 +104,7 @@ export class AuthEmailCodes {
       const user = await collectionUser.findOne({
         email,
         emailVerificationCode: code,
-        verificationCodeEmailSentDate: { $gt: new Date(Date.now() - AuthEmailCodes.TOKEN_MAX_AGE_MS) } // Token is valid for up to 24h
+        verificationCodeEmailSentDate: { [Op.gt]: new Date(Date.now() - AuthEmailCodes.TOKEN_MAX_AGE_MS) } // Token is valid for up to 24h
        })
       if (!user) {
         if (!!specifiedUser) {

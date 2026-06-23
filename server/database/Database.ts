@@ -17,11 +17,11 @@ export class Database {
   public static isTest: boolean = false
 
   public static IGNORE_NUMBER: number = -1
-  public static SORT_NEWEST_FIRST = { createdAt: -1 }
-  public static SORT_OLDEST_FIRST = { createdAt: 1 }
+  public static SORT_NEWEST_FIRST = [['createdAt', 'DESC']]
+  public static SORT_OLDEST_FIRST = [['createdAt', 'ASC']]
 
-  public static ASC = 1
-  public static DESC = -1
+  public static ASC = 'ASC'
+  public static DESC = 'DESC'
 
   private static MSG_CLEAR_CACHE: string = 'clearCache'
   private static onClearCache

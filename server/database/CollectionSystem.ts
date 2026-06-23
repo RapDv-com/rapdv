@@ -18,17 +18,15 @@ export class CollectionSystem extends Collection {
 
   public static create(): Promise<any> {
     return new Promise(async (resolve, reject) => {
-      const repo = Collection.get('System').repository
-
-      let system = await repo.findOne({ where: {} })
+      let system = await System.findOne({ where: {} })
       if (!!system) {
         resolve(system)
         return
       }
 
-      system = repo.create()
+      system = System.build({})
       system.isSetupFinished = false
-      system = await repo.save(system)
+      await system.save()
       resolve(system)
     })
   }
@@ -42,8 +40,7 @@ export class CollectionSystem extends Collection {
 
     return new Promise(async (resolve, reject) => {
       try {
-        const repo = Collection.get('System').repository
-        let system = await repo.findOne({ where: {} })
+        let system = await System.findOne({ where: {} })
         if (!system) system = await CollectionSystem.create()
         resolve(system)
       } catch (error) {
