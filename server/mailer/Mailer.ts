@@ -156,11 +156,19 @@ export class Mailer {
     for (let attachmentName in attachments) {
       let attachmentValue = attachments[attachmentName]
 
-      attachmentsEmail.push({
-        // utf-8 string as an attachment
-        filename: attachmentName,
-        path: attachmentValue
-      })
+      if (Buffer.isBuffer(attachmentValue)) {
+        // In-memory attachment, no need to write it to disk first
+        attachmentsEmail.push({
+          filename: attachmentName,
+          content: attachmentValue
+        })
+      } else {
+        attachmentsEmail.push({
+          // utf-8 string as an attachment
+          filename: attachmentName,
+          path: attachmentValue
+        })
+      }
     }
 
     // Setup email data with unicode symbols
