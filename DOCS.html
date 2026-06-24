@@ -19,7 +19,7 @@
 <!-- MAIN CONTENT -->
 
 <h1>RapDv Documentation</h1>
-<h2 class="mb-5">v1.1.0</h2>
+<h2 class="mb-5">v1.1.1</h2>
 
 <h2 id="QuickStart">Quick Start</h2>
 To start quickly, you can use an example <a href="https://github.com/RapDv-com/rapdv-cms" target="_blank">blog app</a>.
@@ -59,6 +59,7 @@ To start quickly, you can use an example <a href="https://github.com/RapDv-com/r
     <li>Specify list of pages and endpoints in <code>getPages</code></li>
     <li>Set main app layout in <code>getLayout</code></li>
     <li>Add custom user roles in <code>getRoles</code>. Default roles, always available are <code>User</code> and <code>Admin</code>.</li>
+    <li>Connect to the database (MariaDB or PostgreSQL) in <code>connectDatabase</code></li>
     <li>Specify database collections in <code>getStorage</code></li>
     <li>Add recurring tasks, if any in <code>startRecurringTasks</code></li>
   </ol>
@@ -139,7 +140,7 @@ To start quickly, you can use an example <a href="https://github.com/RapDv-com/r
     Copy <code>.env.example</code> to <code>.env</code>, and set correct values in <code>.env</code> file
   </li>
   <li>
-    Start app with: <code>npm start</code>
+    Start the server with: <code>npm start</code>. In a separate terminal, build and watch the client with: <code>npm run build-dev</code>
   </li>
 </ul>
 
