@@ -111,7 +111,7 @@ export class Currency {
     priceText = parseFloat(price.toString()).toFixed(2);
 
     if (hideTrailingZeros) {
-      priceText = parseFloat(priceText).toString();
+      priceText = priceText.replace(/\.00$/, "");
     }
 
     priceText = Currency.addCommaAtThousands(priceText);
