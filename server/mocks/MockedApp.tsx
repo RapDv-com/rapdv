@@ -99,7 +99,7 @@ export class MockedApp extends RapDvApp {
           {content}
         </main>
         <Footer>
-          Company Inc ©{year}
+          Company Inc © {year}
           <Link href="/terms">Terms and Conditions</Link>
           <Link href="/privacy">Privacy Policy</Link>
         </Footer>
