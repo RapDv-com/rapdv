@@ -56,3 +56,10 @@ Folders functions:
 - No callback hell, use async/await instead of callbacks or promises
 - Use code comments only where absolutely necessary. In all cases, try to document code by using clear, descriptive names.
 - Keep your code as simple as possible
+
+---
+
+### Creator
+
+Crafted with care at **[Digital Jetty](https://digitaljetty.com)** - Software design and development company.  
+Need a hand with your next project? [Get in touch](https://digitaljetty.com/services).
