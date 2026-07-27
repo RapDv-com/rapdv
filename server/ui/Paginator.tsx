@@ -14,6 +14,7 @@ type Props = {
   hideIfSinglePage?: boolean
   className?: string
   removeParams?: string[]
+  maxButtons?: number
 }
 
 export class Paginator extends React.Component<Props> {
@@ -22,6 +23,8 @@ export class Paginator extends React.Component<Props> {
   private static KEY_PAGE: string = "page"
 
   private static PAGE_NMB_TO_REAL_OFFSET: number = -1 // &page=1 -> Shows Page 1
+  private static NEARBY_SIDES: number = 2
+  private static WINDOW_FIT_ITERATIONS: number = 3
 
   private MAX_PAGES_NEARBY: number = 3
   private MIN_PAGES: number = 1
@@ -135,12 +138,20 @@ export class Paginator extends React.Component<Props> {
     let firstPage: number = 0
     let totalPages: number = Math.max(this.totalPages, this.MIN_PAGES)
 
+    const lastPageIndex: number = totalPages + Paginator.PAGE_NMB_TO_REAL_OFFSET
+
     // Show maximum few nearby pages links and fast forward / backward to maximum page
-    let startPage: number = Math.max(this.currentPage - this.MAX_PAGES_NEARBY, firstPage)
-    let lastPage: number = Math.min(this.currentPage + this.MAX_PAGES_NEARBY, totalPages + Paginator.PAGE_NMB_TO_REAL_OFFSET)
+    let startPage: number
+    let lastPage: number
+    if (this.props.maxButtons !== undefined) {
+      ({ startPage, lastPage } = this.getWindowForMaxButtons(this.props.maxButtons, lastPageIndex))
+    } else {
+      startPage = Math.max(this.currentPage - this.MAX_PAGES_NEARBY, firstPage)
+      lastPage = Math.min(this.currentPage + this.MAX_PAGES_NEARBY, lastPageIndex)
+    }
 
     let showFastFirst: boolean = startPage != firstPage
-    let showFastLast: boolean = lastPage != totalPages + Paginator.PAGE_NMB_TO_REAL_OFFSET
+    let showFastLast: boolean = lastPage != lastPageIndex
 
     // Add first lisk
     if (showFastFirst) {
@@ -175,6 +186,28 @@ export class Paginator extends React.Component<Props> {
     }
 
     return elements
+  }
+
+  private getWindowForMaxButtons = (maxButtons: number, lastPageIndex: number): { startPage: number, lastPage: number } => {
+    const firstPage = 0
+    let reserveFirst = false
+    let reserveLast = false
+    let startPage = firstPage
+    let lastPage = lastPageIndex
+
+    // The fast links consume button slots only when shown, and showing them depends on the
+    // window itself, so refine the window until the flags settle.
+    for (let iteration = 0; iteration < Paginator.WINDOW_FIT_ITERATIONS; iteration++) {
+      const centerCount = Math.max(this.MIN_PAGES, maxButtons - (reserveFirst ? 1 : 0) - (reserveLast ? 1 : 0))
+      const pagesBefore = Math.floor((centerCount - 1) / Paginator.NEARBY_SIDES)
+      startPage = Math.max(this.currentPage - pagesBefore, firstPage)
+      lastPage = Math.min(startPage + centerCount - 1, lastPageIndex)
+      startPage = Math.max(lastPage - centerCount + 1, firstPage)
+      reserveFirst = startPage > firstPage
+      reserveLast = lastPage < lastPageIndex
+    }
+
+    return { startPage, lastPage }
   }
 
   private getPageLink(index: number, pageNmb: number, cssClasses: string, pageUrl: string): ReactNode {
