@@ -95,7 +95,7 @@ export class PageMetadata {
       default_locale: "en",
       launch_path: "/",
       start_url: "/",
-      display: "fullscreen"
+      display: "standalone"
     })
   }
 
