@@ -69,6 +69,7 @@ export class Form {
 
       let children = element.props.children
       if (!Array.isArray(children)) children = [children]
+      children = children.flat(Infinity)
       let form = initForm
 
       for (const child of children) {
