@@ -16,4 +16,6 @@ export class RunMigration {
   }
 }
 
-RunMigration.main().catch(RunMigration.handleError)
+RunMigration.main()
+  .then(() => process.exit(0))
+  .catch(RunMigration.handleError)
