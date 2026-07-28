@@ -65,8 +65,6 @@ export class Input extends React.Component<Props & React.InputHTMLAttributes<HTM
     }
 
     const invalidFeedback = this.getInvalidFeedback()
-    const isRequired = this.props.required
-    const optionalText = isRequired || this.props.readOnly || this.props.disabled ? "*" : ""
     const isFileUpload = otherProps.type === "file"
     const isCheckbox = otherProps.type === "checkbox"
     const isRadio = otherProps.type === "radio"
@@ -113,7 +111,7 @@ export class Input extends React.Component<Props & React.InputHTMLAttributes<HTM
       return (
         <div className={marginBottomClassName}>
           <label htmlFor={`input${name}`} className="form-label">
-            <>{labelText} <small>{optionalText}</small></>
+            <>{labelText} <small className="required-mark">*</small></>
           </label>
           <input
             id={`input${name}`}
@@ -138,7 +136,7 @@ export class Input extends React.Component<Props & React.InputHTMLAttributes<HTM
             defaultValue={valueFromReq ?? value}
           />
           <label htmlFor={`floating${name}`}>
-            <>{labelText} <small>{optionalText}</small></>
+            <>{labelText} <small className="required-mark">*</small></>
           </label>
           <div className="invalid-feedback">{invalidFeedback}</div>
         </div>

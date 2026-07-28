@@ -51,13 +51,11 @@ export class Textarea extends React.Component<Props & React.InputHTMLAttributes<
     }
 
     const invalidFeedback = this.getInvalidFeedback()
-    const isRequired = this.props.required
-    const optionalText = isRequired || this.props.readOnly ? "*" : ""
 
     return (
       <div className="mb-3">
         {hideLabel !== true && <label htmlFor={`input${name}`} className="form-label">
-          {label ?? placeholderText} <small>{optionalText}</small>
+          {label ?? placeholderText} <small className="required-mark">*</small>
         </label>}
         <textarea
           {...otherProps}

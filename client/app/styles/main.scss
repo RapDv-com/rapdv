@@ -65,6 +65,23 @@ input[type="url"].form-control:read-only {
   overflow: hidden;
 }
 
+label .required-mark {
+  display: none;
+}
+
+input[required] + label .required-mark,
+input[readonly] + label .required-mark,
+input[disabled] + label .required-mark,
+label:has(+ input[required]) .required-mark,
+label:has(+ input[readonly]) .required-mark,
+label:has(+ input[disabled]) .required-mark,
+label:has(+ select[required]) .required-mark,
+label:has(+ select[disabled]) .required-mark,
+label:has(+ textarea[required]) .required-mark,
+label:has(+ textarea[readonly]) .required-mark {
+  display: inline;
+}
+
 @media print
 {
     .no-print, .no-print *

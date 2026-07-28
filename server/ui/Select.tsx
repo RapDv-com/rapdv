@@ -48,13 +48,11 @@ export class Select extends React.Component<Props & React.SelectHTMLAttributes<H
     }
 
     const invalidFeedback = this.getInvalidFeedback()
-    const isRequired = this.props.required
-    const optionalText = isRequired || this.props.disabled ? "*" : ""
 
     return (
       <div className="mb-3">
         {!hideLabel && <label htmlFor={`input${name}`} className="form-label">
-          {placeholderText} <small>{optionalText}</small>
+          {placeholderText} <small className="required-mark">*</small>
         </label>}
         <select
           id={`input${name}`}
