@@ -10,6 +10,7 @@ type Props = {
   description?: string | ReactNode | Element
   hideOverflow?: boolean
   href?: string
+  target?: string
   children?: any
   className?: string
   noPadding?: boolean
@@ -17,7 +18,7 @@ type Props = {
   style?: CSSProperties | undefined;
 }
 
-export const Card = ({ icon, title, description, hideOverflow, href, children, className, noPadding, noMargin, style }: Props) => {
+export const Card = ({ icon, title, description, hideOverflow, href, target, children, className, noPadding, noMargin, style }: Props) => {
 
   const content = <div className="card-body" style={{ padding: noPadding ? '0': undefined }} >
     {title && <h5 className="card-title">
@@ -33,7 +34,7 @@ export const Card = ({ icon, title, description, hideOverflow, href, children, c
   const mainClassName = `card ${noMargin ? "" : "mb-3"} ${className ?? ""} ${hideOverflow ? "hide-overflow" : ""}`
 
   if (!!href) {
-    return <Link className={`${mainClassName} text-decoration-none`} href={href} style={style}>
+    return <Link className={`${mainClassName} text-decoration-none`} href={href} target={target} rel={target === "_blank" ? "noopener" : undefined} style={style}>
       {content}
     </Link>
   }
