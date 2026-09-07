@@ -19,6 +19,8 @@ import { Response } from "express"
 import { BelongsTo, Column, DataType, ForeignKey, Table, Unique } from "sequelize-typescript"
 import { RapDvBaseEntity } from "../database/RapDvBaseEntity"
 import { User } from "../database/CollectionUser"
+import { DatabaseConnection } from "../database/DatabaseConnection"
+import { ConnectMariaDb } from "../database/connectors/ConnectMariaDb"
 
 @Table({ tableName: 'mock_posts', timestamps: true })
 class MockPost extends RapDvBaseEntity {
@@ -47,6 +49,10 @@ export class MockedApp extends RapDvApp {
   })
 
   public initAuth: () => Promise<void> = async () => {
+  }
+
+  public connectDatabase = async (isProduction: boolean, entities: Function[]): Promise<DatabaseConnection> => {
+    return await ConnectMariaDb.connect(entities)
   }
 
   getPages = async () => {
