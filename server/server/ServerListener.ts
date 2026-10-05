@@ -14,6 +14,8 @@ import { ReactNode } from 'react'
 import { Request } from './Request'
 
 export class ServerListener {
+  public static PAGE_CONTENT_SECURITY_POLICY = "base-uri 'self'; object-src 'none'; frame-ancestors 'self'"
+
   public express = express()
   expressViews: Array<string> = new Array()
   isProduction: boolean
@@ -32,8 +34,15 @@ export class ServerListener {
       secret: process.env.SESSION_SECRET,
       cookie: {
         maxAge: undefined,
+        httpOnly: true,
+        sameSite: 'lax',
+        // Secure whenever the request came over HTTPS, also through the reverse proxy
+        secure: 'auto',
       },
     }
+
+    // Read the protocol from a reverse proxy running on the same server
+    this.express.set('trust proxy', 'loopback')
 
     // view engine setup
     this.express.use(logger('dev'))
@@ -46,6 +55,7 @@ export class ServerListener {
     this.express.use(flash())
     this.express.use(lusca.xframe('SAMEORIGIN'))
     this.express.use(lusca.xssProtection(true))
+    this.express.use(lusca.nosniff())
 
     this.express.use((req: Request, res, next) => {
       const isLoggedIn = !!req.user
@@ -65,6 +75,7 @@ export class ServerListener {
     try {
       let contentText = '<!DOCTYPE html>' + ReactDOMServer.renderToStaticMarkup(content)
       contentText = contentText.replace(/{{_csrf}}/g, res.locals._csrf)
+      res.setHeader('Content-Security-Policy', ServerListener.PAGE_CONTENT_SECURITY_POLICY)
       res.send(contentText)
     } catch (error) {
       console.error('Error on rendering views. ' + error)

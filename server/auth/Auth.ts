@@ -10,10 +10,13 @@ import { CollectionUserSession } from "../database/CollectionUserSession"
 import { Network } from "../network/Network"
 import type { RapDvApp, TranslateFn } from "../RapDvApp"
 import passport from "passport"
+import crypto from "crypto"
 
 export class Auth {
   public static SETUP = "AppSetupRun"
   public static SETUP_URL = "/__setup-app__"
+  public static MIN_TOKEN_LENGTH = 6
+  public static MAX_TOKEN_LENGTH = 10
 
   public static configure = () => {
     passport.serializeUser((user, done) => {
@@ -28,16 +31,13 @@ export class Auth {
 
   public static generateRandomToken = (): string => {
     // Generate 6 to 10 random characters 0-9 and A-Z, always uppercase
-    let length = Math.floor(Math.random() * 5) + 6
-    length = Math.min(length, 10)
+    const length = crypto.randomInt(Auth.MIN_TOKEN_LENGTH, Auth.MAX_TOKEN_LENGTH + 1)
 
     let token = ""
     const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
     for (let i = 0; i < length; i++) {
-      let charPosition = Math.floor(Math.random() * characters.length)
-      charPosition = Math.min(charPosition, characters.length - 1)
-      token += characters.charAt(charPosition)
+      token += characters.charAt(crypto.randomInt(characters.length))
     }
     return token
   }

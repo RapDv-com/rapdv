@@ -1,7 +1,7 @@
 // Copyright (C) Konrad Gadzinowski
 
 import { Op } from "sequelize"
-import { CollectionUser, UserRole, UserStatus } from "../database/CollectionUser"
+import { CollectionUser, User, UserRole, UserStatus } from "../database/CollectionUser"
 import { Request } from "../server/Request"
 import { Collection } from "../database/Collection"
 import { CheckEmail, EmailExistance } from "../mailer/CheckEmail";
@@ -15,6 +15,9 @@ export class AuthEmailCodes {
 
   private static TOKEN_MAX_AGE_MS = 3 * 60 * 60 * 1000 // 3h
   private static BANNED_EMAILS: string[] = ["test.com", "test.net"]
+  private static MAX_FAILED_ATTEMPTS = 10
+  private static FAILED_WAIT_TIME_MS = 15 * 60 * 1000 // 15min
+  private static INVALID_CODE_MESSAGE = "Email verification code is invalid."
 
   // No need to configure
 
@@ -90,40 +93,55 @@ export class AuthEmailCodes {
   }
 
   public static verifyEmail = async (req: Request, email: string, code: string, t: TranslateFn): Promise<void> => {
+    // Arrays sent in the request body would turn into "IN (...)" queries, checking many codes in one attempt
+    const isInputValid = typeof email === "string" && typeof code === "string" && code.length > 0 && code.length <= Auth.MAX_TOKEN_LENGTH
+    if (!isInputValid) {
+      throw AuthEmailCodes.INVALID_CODE_MESSAGE
+    }
 
     const collectionUser = Collection.get("User") as CollectionUser
-    try {
-      const specifiedUser = await collectionUser.findOne({ email })
+    const specifiedUser = await collectionUser.findOne({ email })
+    if (!specifiedUser) {
+      throw AuthEmailCodes.INVALID_CODE_MESSAGE
+    }
 
-      const MAX_FAILED_ATTEMPTS = 10
-      const FAILED_WAIT_TIME_MS = 15 * 60 * 1000
-      if (specifiedUser.failedLoginAttempts >= MAX_FAILED_ATTEMPTS && specifiedUser.lastFailedLoginAttempt > new Date(Date.now() - FAILED_WAIT_TIME_MS)) {
-        throw "Too many failed attempts. Try again later."
-      }
+    const isLockedOut =
+      specifiedUser.failedLoginAttempts >= AuthEmailCodes.MAX_FAILED_ATTEMPTS &&
+      specifiedUser.lastFailedLoginAttempt > new Date(Date.now() - AuthEmailCodes.FAILED_WAIT_TIME_MS)
+    if (isLockedOut) {
+      throw "Too many failed attempts. Try again later."
+    }
 
-      const user = await collectionUser.findOne({
-        email,
-        emailVerificationCode: code,
-        verificationCodeEmailSentDate: { [Op.gt]: new Date(Date.now() - AuthEmailCodes.TOKEN_MAX_AGE_MS) } // Token is valid for up to 24h
-       })
-      if (!user) {
-        if (!!specifiedUser) {
-          specifiedUser.failedLoginAttempts += 1
-          specifiedUser.lastFailedLoginAttempt = new Date()
-          await specifiedUser.save()
-        }
-        throw "Email verification code is invalid."
-      }
-      user.emailVerified = true
-      user.emailVerificationCode = null
-      user.failedLoginAttempts = 0
-      user.lastFailedLoginAttempt = new Date(0)
-      user.verificationCodeEmailSentDate = new Date(0) // Allow to log in again instantly
-      await user.save()
+    await AuthEmailCodes.countLoginAttempt(specifiedUser)
 
-      await Auth.logInUser(req, user, t)
-    } catch (error) {
-      throw error
+    const user = await collectionUser.findOne({
+      id: specifiedUser.id,
+      emailVerificationCode: code,
+      verificationCodeEmailSentDate: { [Op.gt]: new Date(Date.now() - AuthEmailCodes.TOKEN_MAX_AGE_MS) }
+    })
+    if (!user) {
+      throw AuthEmailCodes.INVALID_CODE_MESSAGE
+    }
+    user.emailVerified = true
+    user.emailVerificationCode = null
+    user.failedLoginAttempts = 0
+    user.lastFailedLoginAttempt = new Date(0)
+    user.verificationCodeEmailSentDate = new Date(0) // Allow to log in again instantly
+    await user.save()
+
+    await Auth.logInUser(req, user, t)
+  }
+
+  /**
+   * The attempt is counted before the code is checked, and only if no other attempt was counted in the meantime, so parallel requests can't bypass the limit
+   */
+  private static countLoginAttempt = async (user: User): Promise<void> => {
+    const [updatedUsersCount] = await User.update(
+      { failedLoginAttempts: (user.failedLoginAttempts ?? 0) + 1, lastFailedLoginAttempt: new Date() },
+      { where: { id: user.id, failedLoginAttempts: user.failedLoginAttempts } }
+    )
+    if (updatedUsersCount === 0) {
+      throw "Too many login attempts at once. Please try again."
     }
   }
 

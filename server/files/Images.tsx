@@ -7,6 +7,7 @@ import { HttpStatus } from "../network/HttpStatus"
 import { File } from "../server/Request"
 import { ImageInfo, ImageProcessor } from "./ImageProcessor"
 import { FileStorageType } from "../database/CollectionFile"
+import { Files } from "./Files"
 
 export class Images {
   public static downloadPhoto = async (key: string, res: Response) => {
@@ -21,7 +22,7 @@ export class Images {
     const imageData = await imageFile.file.loadData()
 
     res.status(HttpStatus.OK)
-    res.contentType(imageFile.file.mimetype)
+    Files.setSafeContentHeaders(res, imageFile.file.mimetype, imageFile.file.name)
     res.send(imageData)
   }
 

@@ -245,6 +245,7 @@ export abstract class RapDvApp {
       // Inject CSRF token
       contentText = contentText.replace(/{{_csrf}}/g, res.locals._csrf)
 
+      res.setHeader("Content-Security-Policy", ServerListener.PAGE_CONTENT_SECURITY_POLICY)
       res.send(contentText)
     } catch (error) {
       console.error("Error on rendering views. " + error)
@@ -357,15 +358,16 @@ export abstract class RapDvApp {
     restrictions?: (Role | UserRole | string)[],
     enableFilesUpload?: boolean
   ) => {
-    const logicCall = (req: Request, res: Response, next: NextFunction) => logic(req, res, next, this, this.mailer)
+    const logicCall = this.catchErrors(logic)
     const checkAuthorization = Auth.checkUserAuthorization(restrictions, this)
     const postSteps: any[] = [
       path,
+      checkAuthorization,
+      this.upload.removeFilesAfterResponse,
       bodyParser.json(),
       enableFilesUpload ? this.upload.core.any() : this.upload.core.none(),
       this.upload.logUploadError,
       lusca({ csrf: true }),
-      checkAuthorization,
       this.beforeRouteIsRendered(restrictions),
       Auth.checkSystem,
       logicCall
@@ -398,7 +400,7 @@ export abstract class RapDvApp {
   ) => {
     // Require user to be logged in
     const checkAuthorization = Auth.checkUserAuthorization(restrictions, this)
-    const executeLogic = (req: Request, res, next) => logic(req, res, next, this, this.mailer)
+    const executeLogic = this.catchErrors(logic)
     const checkCsrf = !skipCsrfCheck
 
     if (reqType === ReqType.Get) {
@@ -406,11 +408,12 @@ export abstract class RapDvApp {
     } else if (reqType === ReqType.Post) {
       this.router.post(
         path,
+        checkAuthorization,
+        this.upload.removeFilesAfterResponse,
         bodyParser.json(),
         enableFilesUpload ? this.upload.core.any() : this.upload.core.none(),
         this.upload.logUploadError,
         lusca({ csrf: checkCsrf }),
-        checkAuthorization,
         this.beforeEndpointIsCalled(restrictions),
         Auth.checkSystem,
         executeLogic
@@ -430,7 +433,7 @@ export abstract class RapDvApp {
     logic: EndpointLogic,
   ) => {
     // Require user to be logged in
-    const executeLogic = (req: Request, res, next) => logic(req, res, next, this, this.mailer)
+    const executeLogic = this.catchErrors(logic)
 
     if (reqType === ReqType.Get) {
       this.router.get(path,
@@ -454,6 +457,18 @@ export abstract class RapDvApp {
 
   public beforeEndpointIsCalled = (rolesAllowed: (Role | UserRole | string)[]) => async (req: Request, res: Response, next: NextFunction) => {
     next()
+  }
+
+  /**
+   * Express 4 doesn't catch rejected promises, and an unhandled rejection stops the whole server process
+   */
+  private catchErrors = (logic: EndpointLogic) => async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      await logic(req, res, next, this, this.mailer)
+    } catch (error) {
+      console.error("Error on handling " + req.method + " " + req.path + ". " + error)
+      if (!res.headersSent) next(error)
+    }
   }
 
   public addCollection = (name: string, entityClass: Function): Collection => {

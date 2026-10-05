@@ -3,9 +3,12 @@
 import multer from "multer"
 import fs from "fs"
 import path from "path"
+import crypto from "crypto"
 import { FlashType } from "../server/Request"
 
 export class Upload {
+  private static SAFE_EXTENSION_PATTERN = /^\.[a-zA-Z0-9]{1,10}$/
+
   maxFileSizeBytes: number
 
   core: any
@@ -26,7 +29,7 @@ export class Upload {
         cb(null, targetDir)
       },
       filename: (req, file, cb) => {
-        cb(null, file.originalname)
+        cb(null, Upload.getRandomFileName(file.originalname))
       }
     })
 
@@ -38,6 +41,28 @@ export class Upload {
     this.core = upload
 
     return this
+  }
+
+  removeFilesAfterResponse = (req, res, next) => {
+    res.once("close", () => Upload.removeUploadedFiles(req))
+    next()
+  }
+
+  private static removeUploadedFiles = (req) => {
+    const uploadedFiles: any[] = Array.isArray(req.files) ? [...req.files] : Object.values(req.files ?? {}).flat()
+    if (req.file) uploadedFiles.push(req.file)
+
+    for (const uploadedFile of uploadedFiles) {
+      fs.rm(uploadedFile.path, { force: true }, (error) => {
+        if (error) console.error("Couldn't remove uploaded file " + uploadedFile.path + ". " + error)
+      })
+    }
+  }
+
+  private static getRandomFileName = (originalName: string): string => {
+    const extension = path.extname(originalName ?? "")
+    const safeExtension = Upload.SAFE_EXTENSION_PATTERN.test(extension) ? extension : ""
+    return crypto.randomUUID() + safeExtension
   }
 
   createDirIfDontExist = (dirPath: string) => {

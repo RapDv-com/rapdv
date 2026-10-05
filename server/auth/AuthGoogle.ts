@@ -24,6 +24,7 @@ export class AuthGoogle {
       callbackURL: process.env.BASE_URL + "/log-in/google/callback",
       userProfileURL: "https://www.googleapis.com/oauth2/v2/userinfo",
       passReqToCallback: true,
+      state: true,
     },
     async (req, token, tokenSecret, profile, done) => {
 
@@ -49,6 +50,11 @@ export class AuthGoogle {
   }
 
   public static async loginUsingSocialProvider(req, provider: string, id: string, email: string, firstName: string, lastName: string, verifiedEmail: boolean, pictureUrl: string, t: TranslateFn) {
+
+    // Accounts are matched by email, so an unverified email could log in to someone else's account
+    if (!email || !verifiedEmail) {
+      throw t("Your email address isn't verified by the login provider. Please verify it first, or log in with your email.")
+    }
 
     const collectionUser = Collection.get("User") as CollectionUser
 
