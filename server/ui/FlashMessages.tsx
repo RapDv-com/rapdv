@@ -20,8 +20,8 @@ export class FlashMessages extends React.Component<Props> {
     return (
       <div className={`alert alert-${type} fade show`}>
         <Container>
-          {messages.map(({ msg }, index) => (
-            <div key={index}>{this.renderMsg(msg)}</div>
+          {messages.map((message, index) => (
+            <div key={index}>{this.renderMsg(message?.msg ?? message?.message ?? message)}</div>
           ))}
         </Container>
         <button type="button" data-dismiss="alert" className="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
